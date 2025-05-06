@@ -219,14 +219,9 @@ if __name__ == "__main__":
     print("Input data:")
     
     microservices = [
-        [1, 2, 3, 4, 3, 2],  # Microservice 0
-        [2, 1, 1, 2, 3, 4],  # Microservice 1
-        [3, 3, 2, 1, 2, 3],  # Microservice 2
-        [4, 3, 2, 1, 1, 2],  # Microservice 3
-        [2, 3, 4, 3, 2, 1],  # Microservice 4
-        [1, 2, 3, 4, 4, 3],  # Microservice 5
-        [3, 2, 1, 2, 3, 4],  # Microservice 6
-        [4, 3, 2, 1, 2, 3],  # Microservice 7
+        [1, 2, 3, 4],  # Microservice 0
+        [2, 1, 1, 2],  # Microservice 1
+        [3, 3, 2, 1],  # Microservice 2
     ]
     
     for i, service in enumerate(microservices):

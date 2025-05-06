@@ -175,4 +175,3 @@ cython_debug/
 
 # Testing purposes
 testing/*.png
-testing/*.json
