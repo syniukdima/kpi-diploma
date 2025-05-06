@@ -5,78 +5,78 @@ import os
 
 def generate_constant_service(base_load=2, variation=0.5):
     """
-    Генерує мікросервіс з майже постійним навантаженням.
+    Generates a microservice with almost constant load.
     
     Args:
-        base_load: Базове навантаження
-        variation: Максимальне відхилення від базового навантаження
+        base_load: Base load value
+        variation: Maximum deviation from base load
         
     Returns:
-        Список з 24 значень навантаження
+        List of 24 load values
     """
     return [max(1, round(random.uniform(base_load - variation, base_load + variation), 1)) for _ in range(24)]
 
 def generate_day_service(min_load=1, max_load=5):
     """
-    Генерує мікросервіс з денним патерном навантаження.
-    Пікові години: 9-18 (робочий день)
+    Generates a microservice with daytime load pattern.
+    Peak hours: 9-18 (working day)
     
     Returns:
-        Список з 24 значень навантаження
+        List of 24 load values
     """
     loads = []
     for hour in range(24):
-        if 0 <= hour < 6:  # Нічний мінімум
+        if 0 <= hour < 6:  # Night minimum
             load = random.uniform(min_load, min_load + 0.5)
-        elif 6 <= hour < 9:  # Ранковий підйом
+        elif 6 <= hour < 9:  # Morning increase
             progress = (hour - 6) / 3
             load = min_load + progress * (max_load - min_load)
-        elif 9 <= hour < 18:  # Денний пік
+        elif 9 <= hour < 18:  # Day peak
             load = random.uniform(max_load - 1, max_load)
-        elif 18 <= hour < 22:  # Вечірній спад
+        elif 18 <= hour < 22:  # Evening decrease
             progress = (hour - 18) / 4
             load = max_load - progress * (max_load - min_load)
-        else:  # Нічний спад
+        else:  # Night decrease
             load = random.uniform(min_load, min_load + 1)
         loads.append(max(1, round(load, 1)))
     return loads
 
 def generate_night_service(min_load=1, max_load=5):
     """
-    Генерує мікросервіс з нічним патерном навантаження.
-    Пікові години: 20-4 (вечір і ніч)
+    Generates a microservice with night load pattern.
+    Peak hours: 20-4 (evening and night)
     
     Returns:
-        Список з 24 значень навантаження
+        List of 24 load values
     """
     loads = []
     for hour in range(24):
-        if 0 <= hour < 4:  # Нічний пік
+        if 0 <= hour < 4:  # Night peak
             load = random.uniform(max_load - 1, max_load)
-        elif 4 <= hour < 8:  # Ранковий спад
+        elif 4 <= hour < 8:  # Morning decrease
             progress = (hour - 4) / 4
             load = max_load - progress * (max_load - min_load)
-        elif 8 <= hour < 16:  # Денний мінімум
+        elif 8 <= hour < 16:  # Day minimum
             load = random.uniform(min_load, min_load + 1)
-        elif 16 <= hour < 20:  # Вечірній підйом
+        elif 16 <= hour < 20:  # Evening increase
             progress = (hour - 16) / 4
             load = min_load + progress * (max_load - min_load)
-        else:  # Нічний пік
+        else:  # Night peak
             load = random.uniform(max_load - 1, max_load)
         loads.append(max(1, round(load, 1)))
     return loads
 
 def generate_peak_service(base_load=1, peak_load=5, peak_hour=None):
     """
-    Генерує мікросервіс з різким піком навантаження в певну годину.
+    Generates a microservice with a sharp peak load at a specific hour.
     
     Args:
-        base_load: Базове навантаження
-        peak_load: Пікове навантаження
-        peak_hour: Година піку (якщо None, вибирається випадково)
+        base_load: Base load value
+        peak_load: Peak load value
+        peak_hour: Hour of the peak (if None, chosen randomly)
         
     Returns:
-        Список з 24 значень навантаження
+        List of 24 load values
     """
     if peak_hour is None:
         peak_hour = random.randint(0, 23)
@@ -85,7 +85,7 @@ def generate_peak_service(base_load=1, peak_load=5, peak_hour=None):
     for hour in range(24):
         if hour == peak_hour:
             load = peak_load
-        elif abs(hour - peak_hour) == 1 or abs(hour - peak_hour) == 23:  # Сусідні години (з урахуванням циклічності)
+        elif abs(hour - peak_hour) == 1 or abs(hour - peak_hour) == 23:  # Adjacent hours (with cyclicity)
             load = random.uniform(base_load + 1, peak_load - 1)
         else:
             load = random.uniform(base_load, base_load + 1)
@@ -94,70 +94,70 @@ def generate_peak_service(base_load=1, peak_load=5, peak_hour=None):
 
 def generate_complementary_service(service):
     """
-    Генерує мікросервіс, комплементарний до заданого.
+    Generates a microservice complementary to the given one.
     
     Args:
-        service: Список з 24 значень навантаження
+        service: List of 24 load values
         
     Returns:
-        Список з 24 значень навантаження, комплементарний до вхідного
+        List of 24 load values complementary to the input
     """
     max_load = max(service)
     min_load = min(service)
     
-    # Створюємо комплементарне навантаження: якщо в оригіналі високе, в результаті низьке і навпаки
+    # Create complementary load: if original is high, result is low and vice versa
     return [max(1, round(max_load + min_load - load, 1)) for load in service]
 
 def generate_microservice_dataset(num_services, output_file=None):
     """
-    Генерує набір мікросервісів з реалістичними патернами навантаження.
+    Generates a set of microservices with realistic load patterns.
     
     Args:
-        num_services: Кількість мікросервісів
-        output_file: Файл для збереження результатів (якщо None, тільки повертає дані)
+        num_services: Number of microservices
+        output_file: File to save results (if None, only returns data)
         
     Returns:
-        Список списків з 24 значеннями навантаження
+        List of lists with 24 load values
     """
-    # Розподіл типів мікросервісів
-    constant_ratio = 0.2  # 20% постійних
-    day_ratio = 0.3       # 30% денних
-    night_ratio = 0.2     # 20% нічних
-    peak_ratio = 0.1      # 10% пікових
-    complementary_ratio = 0.2  # 20% комплементарних
+    # Distribution of microservice types
+    constant_ratio = 0.2  # 20% constant
+    day_ratio = 0.3       # 30% day-time
+    night_ratio = 0.2     # 20% night-time
+    peak_ratio = 0.1      # 10% peak
+    complementary_ratio = 0.2  # 20% complementary
     
     services = []
     
-    # Генеруємо постійні мікросервіси
+    # Generate constant microservices
     constant_count = int(num_services * constant_ratio)
     for _ in range(constant_count):
         base_load = random.uniform(1.5, 4)
         services.append(generate_constant_service(base_load=base_load))
     
-    # Генеруємо денні мікросервіси
+    # Generate day-time microservices
     day_count = int(num_services * day_ratio)
     for _ in range(day_count):
         services.append(generate_day_service())
     
-    # Генеруємо нічні мікросервіси
+    # Generate night-time microservices
     night_count = int(num_services * night_ratio)
     for _ in range(night_count):
         services.append(generate_night_service())
     
-    # Генеруємо мікросервіси з піками
+    # Generate peak microservices
     peak_count = int(num_services * peak_ratio)
     peak_hours = random.sample(range(24), min(peak_count, 24))
     for i in range(peak_count):
         peak_hour = peak_hours[i % len(peak_hours)]
         services.append(generate_peak_service(peak_hour=peak_hour))
     
-    # Генеруємо комплементарні мікросервіси
+    # Generate complementary microservices
     complementary_count = int(num_services * complementary_ratio)
     source_indices = random.sample(range(len(services)), min(complementary_count, len(services)))
     for idx in source_indices:
         services.append(generate_complementary_service(services[idx]))
     
-    # Додаємо випадкові мікросервіси, якщо потрібно
+    # Add random microservices if needed
     while len(services) < num_services:
         service_type = random.choice(["constant", "day", "night", "peak"])
         if service_type == "constant":
@@ -169,41 +169,41 @@ def generate_microservice_dataset(num_services, output_file=None):
         else:
             services.append(generate_peak_service())
     
-    # Округлюємо значення до одного знаку після коми
+    # Round values to one decimal place
     services = [[round(value, 1) for value in service] for service in services]
     
-    # Зберігаємо в файл, якщо потрібно
+    # Save to file if needed
     if output_file:
         with open(output_file, 'w') as f:
             json.dump(services, f, indent=2)
-        print(f"Дані збережено у файл {output_file}")
+        print(f"Data saved to file {output_file}")
     
     return services
 
 def plot_services(services, num_samples=5, output_file=None):
     """
-    Візуалізує навантаження вибраних мікросервісів.
+    Visualizes the load of selected microservices.
     
     Args:
-        services: Список списків з 24 значеннями навантаження
-        num_samples: Кількість мікросервісів для відображення
-        output_file: Файл для збереження графіка
+        services: List of lists with 24 load values
+        num_samples: Number of microservices to display
+        output_file: File to save the plot
     """
     try:
         import matplotlib.pyplot as plt
         
-        # Вибираємо випадкові мікросервіси для візуалізації
+        # Select random microservices for visualization
         sample_indices = random.sample(range(len(services)), min(num_samples, len(services)))
         
         plt.figure(figsize=(12, 6))
         hours = list(range(24))
         
         for idx in sample_indices:
-            plt.plot(hours, services[idx], label=f"Мікросервіс {idx}")
+            plt.plot(hours, services[idx], label=f"Microservice {idx}")
         
-        plt.xlabel("Година доби")
-        plt.ylabel("Навантаження")
-        plt.title("Добові патерни навантаження мікросервісів")
+        plt.xlabel("Hour of day")
+        plt.ylabel("Load")
+        plt.title("Daily load patterns of microservices")
         plt.grid(True, linestyle='--', alpha=0.7)
         plt.xticks(range(0, 24, 2))
         plt.xlim(0, 23)
@@ -211,36 +211,36 @@ def plot_services(services, num_samples=5, output_file=None):
         
         if output_file:
             plt.savefig(output_file)
-            print(f"Графік збережено у файл {output_file}")
+            print(f"Plot saved to file {output_file}")
         else:
             plt.show()
     
     except ImportError:
-        print("Для візуалізації потрібна бібліотека matplotlib")
+        print("Matplotlib library is required for visualization")
 
 if __name__ == "__main__":
-    # Приклад використання
-    # Генеруємо 50 мікросервісів і зберігаємо у файл
+    # Example usage
+    # Generate 50 microservices and save to file
     services = generate_microservice_dataset(50, "testing/microservices_data.json")
     
-    # Візуалізуємо приклади мікросервісів
+    # Visualize sample microservices
     try:
         plot_services(services, num_samples=8, output_file="testing/microservices_patterns.png")
     except Exception as e:
-        print(f"Не вдалося створити візуалізацію: {e}")
+        print(f"Visualization failed: {e}")
     
-    # Демонстрація різних типів
-    print("\nПриклади різних типів мікросервісів:")
-    print("Постійний:     ", generate_constant_service())
-    print("Денний:        ", generate_day_service())
-    print("Нічний:        ", generate_night_service())
-    print("Піковий:       ", generate_peak_service())
+    # Demonstration of different types
+    print("\nExamples of different microservice types:")
+    print("Constant:     ", generate_constant_service())
+    print("Day-time:     ", generate_day_service())
+    print("Night-time:   ", generate_night_service())
+    print("Peak:         ", generate_peak_service())
     
-    # Демонстрація комплементарних пар
+    # Demonstration of complementary pairs
     original = generate_day_service()
     complementary = generate_complementary_service(original)
     
-    print("\nПриклад комплементарної пари:")
-    print("Оригінальний:  ", original)
-    print("Комплементарний:", complementary)
-    print("Сума:          ", [round(a + b, 1) for a, b in zip(original, complementary)]) 
+    print("\nExample of complementary pair:")
+    print("Original:     ", original)
+    print("Complementary:", complementary)
+    print("Sum:          ", [round(a + b, 1) for a, b in zip(original, complementary)]) 
