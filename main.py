@@ -1,158 +1,246 @@
-def distribute_items_to_knapsacks(item_arrays, num_knapsacks, max_deviation_percent=None):
+def calculate_stability(group):
     """
-    Distributes numbers from several arrays into knapsacks to achieve approximately equal sum in each knapsack.
+    Обчислює коефіцієнт варіації для групи мікросервісів.
+    Менше значення = краща стабільність.
     
     Args:
-        item_arrays: List of number arrays to distribute
-        num_knapsacks: Number of knapsacks for distribution
-        max_deviation_percent: Maximum allowed deviation from ideal weight in percentage
-                              (e.g., 10 means ±10% from ideal weight). If None, no constraint is applied.
+        group: Список часових рядів навантаження мікросервісів у групі
+        
+    Returns:
+        Коефіцієнт варіації у відсотках
+    """
+    # Обчислюємо суму для кожного часового слоту
+    time_slots = len(group[0])
+    slot_sums = [0] * time_slots
+    
+    for service in group:
+        for t in range(time_slots):
+            slot_sums[t] += service[t]
+    
+    # Обчислюємо коефіцієнт варіації
+    mean = sum(slot_sums) / len(slot_sums)
+    
+    if mean == 0:
+        return float('inf')
+    
+    variance = sum((x - mean) ** 2 for x in slot_sums) / len(slot_sums)
+    std_dev = variance ** 0.5
+    
+    return (std_dev / mean) * 100  # Коефіцієнт варіації у відсотках
+
+def calculate_load_sum(services):
+    """
+    Обчислює сумарне навантаження кожного часового слоту для набору мікросервісів.
+    
+    Args:
+        services: Список часових рядів навантаження мікросервісів
+        
+    Returns:
+        Список сумарного навантаження по часових слотах
+    """
+    if not services:
+        return []
+    
+    time_slots = len(services[0])
+    slot_sums = [0] * time_slots
+    
+    for service in services:
+        for t in range(time_slots):
+            slot_sums[t] += service[t]
+    
+    return slot_sums
+
+def form_stable_groups(microservices):
+    """
+    Формує групи мікросервісів використовуючи алгоритм упакування множинного рюкзака
+    з гнучким обмеженням цільової ваги.
+    
+    Args:
+        microservices: Список часових рядів навантаження мікросервісів
     
     Returns:
-        List of knapsacks, where each knapsack is a list of numbers
-        
-    Raises:
-        ValueError: If no valid solution can be found within the given constraint
+        Tuple of (groups, group_services, slot_sums)
+        - groups: Список груп, де кожна група містить часові ряди мікросервісів
+        - group_services: Список індексів мікросервісів у кожній групі
+        - slot_sums: Список сумарного навантаження по часових слотах для кожної групи
     """
-    # Combine all numbers into one array
-    all_items = []
-    for array in item_arrays:
-        all_items.extend(array)
+    n = len(microservices)
+    time_slots = len(microservices[0])
     
-    # Calculate ideal weight per knapsack
-    total_weight = sum(all_items)
-    ideal_weight = total_weight / num_knapsacks
+    # Підготовка даних для рюкзака
+    service_indices = list(range(n))
     
-    # Sort numbers in descending order for better balancing
-    all_items.sort(reverse=True)
+    # Обчислюємо ідеальне цільове навантаження - середнє по всіх мікросервісах
+    total_load = [0] * time_slots
+    for service in microservices:
+        for t in range(time_slots):
+            total_load[t] += service[t]
     
-    # Initialize knapsacks
-    knapsacks = [[] for _ in range(num_knapsacks)]
-    knapsack_sums = [0] * num_knapsacks
+    avg_load_per_slot = sum(total_load) / (time_slots * n)
     
-    # Distribute each number to the knapsack with the lowest current sum
-    for item in all_items:
-        # Find the knapsack with the minimum sum
-        min_knapsack_index = knapsack_sums.index(min(knapsack_sums))
+    # Алгоритм рюкзака з гнучким обмеженням
+    groups = []  # Часові ряди мікросервісів у кожній групі
+    group_services = []  # Індекси мікросервісів у кожній групі
+    used = [False] * n
+    slot_sums_per_group = []
+    
+    # Поки не всі мікросервіси розподілені
+    while not all(used):
+        # Ініціалізуємо нову групу
+        current_group = []
+        current_services = []
+        current_load = [0] * time_slots
         
-        # Add the number to this knapsack
-        knapsacks[min_knapsack_index].append(item)
-        knapsack_sums[min_knapsack_index] += item
-    
-    # Check if solution meets the deviation constraint (if provided)
-    if max_deviation_percent is not None:
-        min_allowed = ideal_weight * (1 - max_deviation_percent / 100)
-        max_allowed = ideal_weight * (1 + max_deviation_percent / 100)
+        # Шукаємо найкращий мікросервіс для початку нової групи
+        best_start_idx = -1
+        best_start_stability = float('inf')
         
-        # Check if any knapsack is outside the allowed range
-        for knapsack_sum in knapsack_sums:
-            if knapsack_sum < min_allowed or knapsack_sum > max_allowed:
-                raise ValueError(
-                    f"Could not find a solution within ±{max_deviation_percent}% of ideal weight ({ideal_weight:.2f}).\n"
-                    f"Knapsack sums: {knapsack_sums}\n"
-                    f"Allowed range: {min_allowed:.2f} to {max_allowed:.2f}\n"
-                    f"Try increasing the deviation percentage or use a different algorithm."
-                )
+        for i in range(n):
+            if not used[i]:
+                test_stability = calculate_stability([microservices[i]])
+                if test_stability < best_start_stability:
+                    best_start_stability = test_stability
+                    best_start_idx = i
+        
+        # Додаємо найкращий початковий мікросервіс
+        if best_start_idx != -1:
+            current_group.append(microservices[best_start_idx])
+            current_services.append(best_start_idx)
+            used[best_start_idx] = True
+            
+            # Оновлюємо поточне навантаження групи
+            for t in range(time_slots):
+                current_load[t] += microservices[best_start_idx][t]
+        
+        # Намагаємось додати інші мікросервіси для досягнення цільового навантаження
+        improved = True
+        while improved:
+            improved = False
+            
+            best_service_idx = -1
+            best_stability = calculate_stability(current_group)
+            
+            # Цільове навантаження - це середнє навантаження всіх мікросервісів, помножене на поточний розмір групи
+            target_load = avg_load_per_slot * (len(current_services) + 1)
+            
+            # Перебираємо всі невикористані мікросервіси
+            for i in range(n):
+                if not used[i]:
+                    # Додаємо мікросервіс тимчасово
+                    test_group = current_group + [microservices[i]]
+                    
+                    # Обчислюємо нову стабільність
+                    test_stability = calculate_stability(test_group)
+                    
+                    # Якщо стабільність покращується, зберігаємо цей мікросервіс
+                    if test_stability < best_stability:
+                        best_stability = test_stability
+                        best_service_idx = i
+            
+            # Якщо знайдено відповідний мікросервіс, додаємо його до групи
+            if best_service_idx != -1:
+                current_group.append(microservices[best_service_idx])
+                current_services.append(best_service_idx)
+                used[best_service_idx] = True
+                
+                # Оновлюємо поточне навантаження групи
+                for t in range(time_slots):
+                    current_load[t] += microservices[best_service_idx][t]
+                
+                improved = True
+            
+            # Якщо розмір групи досягнув максимуму або всі мікросервіси використані
+            if len(current_services) >= n or all(used):
+                break
+        
+        # Зберігаємо сформовану групу
+        if current_group:
+            groups.append(current_group)
+            group_services.append(current_services)
+            slot_sums_per_group.append(current_load)
     
-    return knapsacks
+    return groups, group_services, slot_sums_per_group
 
-def distribute_with_percentage_constraint(item_arrays, num_knapsacks, max_deviation_percent):
+def print_results(groups, group_services, slot_sums):
     """
-    Distributes items with a percentage-based constraint on deviation from ideal weight.
+    Виводить результати групування мікросервісів.
     
     Args:
-        item_arrays: List of number arrays to distribute
-        num_knapsacks: Number of knapsacks for distribution
-        max_deviation_percent: Maximum allowed deviation from ideal weight in percentage
-                              (e.g., 10 means ±10% from ideal weight)
-    
-    Returns:
-        Tuple of (knapsacks, success_flag)
-        - knapsacks: The distribution of items
-        - success_flag: True if the solution meets the constraint, False otherwise
-    
-    Raises:
-        ValueError: If no valid solution can be found within the given constraint
+        groups: Список груп, де кожна група містить часові ряди мікросервісів
+        group_services: Список індексів мікросервісів у кожній групі
+        slot_sums: Список сумарного навантаження по часових слотах для кожної групи
     """
-    # Combine all numbers into one array
-    all_items = []
-    for array in item_arrays:
-        all_items.extend(array)
+    print("Результати розподілу груп:")
     
-    # Calculate ideal weight per knapsack
-    total_weight = sum(all_items)
-    ideal_weight = total_weight / num_knapsacks
+    for i, (group, service_indices, sums) in enumerate(zip(groups, group_services, slot_sums)):
+        # Обчислюємо статистики
+        mean = sum(sums) / len(sums)
+        variance = sum((x - mean) ** 2 for x in sums) / len(sums)
+        std_dev = variance ** 0.5
+        cv = (std_dev / mean) * 100 if mean > 0 else float('inf')
+        
+        print(f"\nГрупа {i+1}:")
+        print(f"  Мікросервіси: {service_indices}")
+        
+        print("  Індивідуальне навантаження по часових слотах:")
+        for j, service in enumerate(group):
+            print(f"    Мікросервіс {service_indices[j]}: {service}")
+        
+        print(f"  Сумарне навантаження по часових слотах: {sums}")
+        print(f"  Середнє навантаження: {mean:.2f}")
+        print(f"  Стандартне відхилення: {std_dev:.2f}")
+        print(f"  Коефіцієнт варіації: {cv:.2f}%")
     
-    # Calculate min and max allowed weight based on deviation percentage
-    min_allowed = ideal_weight * (1 - max_deviation_percent / 100)
-    max_allowed = ideal_weight * (1 + max_deviation_percent / 100)
+    # Обчислюємо загальні статистики
+    print("\nЗагальна статистика:")
+    print(f"  Кількість груп: {len(groups)}")
+    print(f"  Загальна кількість мікросервісів: {sum(len(g) for g in group_services)}")
     
-    # Try normal distribution first
-    knapsacks = distribute_items_to_knapsacks([all_items], num_knapsacks)
+    # Обчислюємо середній коефіцієнт варіації для всіх груп
+    avg_cv = 0
+    if groups:
+        cvs = []
+        for sums in slot_sums:
+            mean = sum(sums) / len(sums)
+            if mean > 0:
+                variance = sum((x - mean) ** 2 for x in sums) / len(sums)
+                std_dev = variance ** 0.5
+                cvs.append((std_dev / mean) * 100)
+        
+        if cvs:
+            avg_cv = sum(cvs) / len(cvs)
     
-    # Check if the solution meets the constraint
-    within_constraint = True
-    for knapsack in knapsacks:
-        knapsack_sum = sum(knapsack)
-        if knapsack_sum < min_allowed or knapsack_sum > max_allowed:
-            within_constraint = False
-            break
-    
-    if not within_constraint:
-        raise ValueError(
-            f"Could not find a solution within ±{max_deviation_percent}% of ideal weight ({ideal_weight:.2f}). "
-            f"Try increasing the deviation percentage or use a different algorithm."
-        )
-    
-    return knapsacks
+    print(f"  Середній коефіцієнт варіації: {avg_cv:.2f}%")
 
-def print_results(knapsacks):
-    """
-    Prints the distribution results of the knapsacks.
-    
-    Args:
-        knapsacks: List of knapsacks with numbers
-    """
-    print("Distribution results:")
-    total_sum = 0
-    
-    for i, knapsack in enumerate(knapsacks):
-        knapsack_sum = sum(knapsack)
-        total_sum += knapsack_sum
-        print(f"Knapsack {i+1}: {knapsack} - Sum: {knapsack_sum}")
-    
-    average_sum = total_sum / len(knapsacks)
-    print(f"\nAverage sum per knapsack: {average_sum:.2f}")
-    
-    # Calculate deviation from the average sum
-    deviations = [abs(sum(knapsack) - average_sum) for knapsack in knapsacks]
-    average_deviation = sum(deviations) / len(deviations)
-    max_deviation = max(deviations)
-    
-    print(f"Average deviation: {average_deviation:.2f}")
-    print(f"Maximum deviation: {max_deviation:.2f}")
-    
-    # Calculate percentage deviation
-    percentage_deviations = [abs(sum(knapsack) - average_sum) / average_sum * 100 for knapsack in knapsacks]
-    average_percentage_deviation = sum(percentage_deviations) / len(percentage_deviations)
-    max_percentage_deviation = max(percentage_deviations)
-    
-    print(f"Average percentage deviation: {average_percentage_deviation:.2f}%")
-    print(f"Maximum percentage deviation: {max_percentage_deviation:.2f}%")
-
-# Example usage
+# Приклад використання
 if __name__ == "__main__":
-    array1 = [10, 14, 8, 12]
-    array2 = [7, 9, 1, 14]
-    array3 = [6, 13, 5, 4]
-    array4 = [6, 13, 5, 4]
+    # Приклад з мікросервісами
+    print("\n" + "="*60)
+    print("Вхідні дані:")
     
-    item_arrays = [array1, array2, array3, array4]
-    num_knapsacks = 4
-
+    microservices = [
+        [1, 2, 4, 2],  # Мікросервіс 0
+        [1, 2, 3, 3],  # Мікросервіс 0
+        [1, 2, 3, 4],  # Мікросервіс 0
+        [2, 1, 1, 2],  # Мікросервіс 1
+        [2, 1, 1, 2],  # Мікросервіс 1
+        [2, 1, 1, 2],  # Мікросервіс 1
+        [2, 1, 1, 2],  # Мікросервіс 1
+        [2, 1, 1, 2],  # Мікросервіс 1
+        [3, 3, 2, 2],  # Мікросервіс 2
+        [3, 3, 2, 1],  # Мікросервіс 2
+        [3, 3, 2, 1],  # Мікросервіс 2
+    ]
+    
+    for i, service in enumerate(microservices):
+        print(f"Мікросервіс {i}: {service}")
+    print("="*60 + "\n")
+    
     try:
-        grouped_knapsacks = distribute_items_to_knapsacks(item_arrays, num_knapsacks, max_deviation_percent=10)
-        print_results(grouped_knapsacks)
+        groups, group_services, slot_sums = form_stable_groups(microservices)
+        print_results(groups, group_services, slot_sums)
     except ValueError as e:
-        print(f"Error: {e}")
+        print(f"Помилка: {e}")
+    
+    
 
