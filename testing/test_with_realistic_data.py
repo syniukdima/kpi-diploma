@@ -41,7 +41,7 @@ def test_realistic_workload(num_services=50, generate_new_data=True, input_file=
     
     # Test the algorithm
     print("\nRunning the stable group formation algorithm...")
-    groups, group_services, slot_sums = main.form_stable_groups(services)
+    groups, group_services, slot_sums = main.form_multiple_knapsack_groups(services)
     
     # Analyze results
     print("\nGrouping results:")
@@ -182,4 +182,4 @@ def test_realistic_workload(num_services=50, generate_new_data=True, input_file=
 
 if __name__ == "__main__":
     # Run with existing data (without generating new data)
-    test_realistic_workload(generate_new_data=True) 
+    test_realistic_workload(generate_new_data=False) 
