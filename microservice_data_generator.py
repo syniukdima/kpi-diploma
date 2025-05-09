@@ -2,8 +2,9 @@ import random
 import numpy as np
 import json
 import os
+import matplotlib.pyplot as plt
 
-def generate_constant_service(base_load=2, variation=0.5):
+def generate_constant_service(base_load=5, variation=1):
     """
     Generates a microservice with almost constant load.
     
@@ -14,9 +15,9 @@ def generate_constant_service(base_load=2, variation=0.5):
     Returns:
         List of 24 load values
     """
-    return [max(1, round(random.uniform(base_load - variation, base_load + variation), 1)) for _ in range(24)]
+    return [max(1, min(10, random.randint(base_load - variation, base_load + variation))) for _ in range(24)]
 
-def generate_day_service(min_load=1, max_load=5):
+def generate_day_service(min_load=1, max_load=10):
     """
     Generates a microservice with daytime load pattern.
     Peak hours: 9-18 (working day)
@@ -27,21 +28,21 @@ def generate_day_service(min_load=1, max_load=5):
     loads = []
     for hour in range(24):
         if 0 <= hour < 6:  # Night minimum
-            load = random.uniform(min_load, min_load + 0.5)
+            load = random.randint(min_load, min_load + 1)
         elif 6 <= hour < 9:  # Morning increase
             progress = (hour - 6) / 3
-            load = min_load + progress * (max_load - min_load)
+            load = min_load + int(progress * (max_load - min_load))
         elif 9 <= hour < 18:  # Day peak
-            load = random.uniform(max_load - 1, max_load)
+            load = random.randint(max_load - 2, max_load)
         elif 18 <= hour < 22:  # Evening decrease
             progress = (hour - 18) / 4
-            load = max_load - progress * (max_load - min_load)
+            load = max_load - int(progress * (max_load - min_load))
         else:  # Night decrease
-            load = random.uniform(min_load, min_load + 1)
-        loads.append(max(1, round(load, 1)))
+            load = random.randint(min_load, min_load + 2)
+        loads.append(max(1, min(10, load)))
     return loads
 
-def generate_night_service(min_load=1, max_load=5):
+def generate_night_service(min_load=1, max_load=10):
     """
     Generates a microservice with night load pattern.
     Peak hours: 20-4 (evening and night)
@@ -52,21 +53,21 @@ def generate_night_service(min_load=1, max_load=5):
     loads = []
     for hour in range(24):
         if 0 <= hour < 4:  # Night peak
-            load = random.uniform(max_load - 1, max_load)
+            load = random.randint(max_load - 2, max_load)
         elif 4 <= hour < 8:  # Morning decrease
             progress = (hour - 4) / 4
-            load = max_load - progress * (max_load - min_load)
+            load = max_load - int(progress * (max_load - min_load))
         elif 8 <= hour < 16:  # Day minimum
-            load = random.uniform(min_load, min_load + 1)
+            load = random.randint(min_load, min_load + 2)
         elif 16 <= hour < 20:  # Evening increase
             progress = (hour - 16) / 4
-            load = min_load + progress * (max_load - min_load)
+            load = min_load + int(progress * (max_load - min_load))
         else:  # Night peak
-            load = random.uniform(max_load - 1, max_load)
-        loads.append(max(1, round(load, 1)))
+            load = random.randint(max_load - 2, max_load)
+        loads.append(max(1, min(10, load)))
     return loads
 
-def generate_peak_service(base_load=1, peak_load=5, peak_hour=None):
+def generate_peak_service(base_load=1, peak_load=10, peak_hour=None):
     """
     Generates a microservice with a sharp peak load at a specific hour.
     
@@ -86,10 +87,10 @@ def generate_peak_service(base_load=1, peak_load=5, peak_hour=None):
         if hour == peak_hour:
             load = peak_load
         elif abs(hour - peak_hour) == 1 or abs(hour - peak_hour) == 23:  # Adjacent hours (with cyclicity)
-            load = random.uniform(base_load + 1, peak_load - 1)
+            load = random.randint(base_load + 2, peak_load - 2)
         else:
-            load = random.uniform(base_load, base_load + 1)
-        loads.append(max(1, round(load, 1)))
+            load = random.randint(base_load, base_load + 2)
+        loads.append(max(1, min(10, load)))
     return loads
 
 def generate_complementary_service(service):
@@ -106,7 +107,7 @@ def generate_complementary_service(service):
     min_load = min(service)
     
     # Create complementary load: if original is high, result is low and vice versa
-    return [max(1, round(max_load + min_load - load, 1)) for load in service]
+    return [max(1, min(10, max_load + min_load - load)) for load in service]
 
 def generate_microservice_dataset(num_services, output_file=None):
     """
@@ -131,7 +132,7 @@ def generate_microservice_dataset(num_services, output_file=None):
     # Generate constant microservices
     constant_count = int(num_services * constant_ratio)
     for _ in range(constant_count):
-        base_load = random.uniform(1.5, 4)
+        base_load = random.randint(3, 8)
         services.append(generate_constant_service(base_load=base_load))
     
     # Generate day-time microservices
@@ -169,9 +170,6 @@ def generate_microservice_dataset(num_services, output_file=None):
         else:
             services.append(generate_peak_service())
     
-    # Round values to one decimal place
-    services = [[round(value, 1) for value in service] for service in services]
-    
     # Save to file if needed
     if output_file:
         with open(output_file, 'w') as f:
@@ -180,67 +178,7 @@ def generate_microservice_dataset(num_services, output_file=None):
     
     return services
 
-def plot_services(services, num_samples=5, output_file=None):
-    """
-    Visualizes the load of selected microservices.
-    
-    Args:
-        services: List of lists with 24 load values
-        num_samples: Number of microservices to display
-        output_file: File to save the plot
-    """
-    try:
-        import matplotlib.pyplot as plt
-        
-        # Select random microservices for visualization
-        sample_indices = random.sample(range(len(services)), min(num_samples, len(services)))
-        
-        plt.figure(figsize=(12, 6))
-        hours = list(range(24))
-        
-        for idx in sample_indices:
-            plt.plot(hours, services[idx], label=f"Microservice {idx}")
-        
-        plt.xlabel("Hour of day")
-        plt.ylabel("Load")
-        plt.title("Daily load patterns of microservices")
-        plt.grid(True, linestyle='--', alpha=0.7)
-        plt.xticks(range(0, 24, 2))
-        plt.xlim(0, 23)
-        plt.legend()
-        
-        if output_file:
-            plt.savefig(output_file)
-            print(f"Plot saved to file {output_file}")
-        else:
-            plt.show()
-    
-    except ImportError:
-        print("Matplotlib library is required for visualization")
-
 if __name__ == "__main__":
     # Example usage
     # Generate 50 microservices and save to file
-    services = generate_microservice_dataset(50, "testing/microservices_data.json")
-    
-    # Visualize sample microservices
-    try:
-        plot_services(services, num_samples=8, output_file="testing/microservices_patterns.png")
-    except Exception as e:
-        print(f"Visualization failed: {e}")
-    
-    # Demonstration of different types
-    print("\nExamples of different microservice types:")
-    print("Constant:     ", generate_constant_service())
-    print("Day-time:     ", generate_day_service())
-    print("Night-time:   ", generate_night_service())
-    print("Peak:         ", generate_peak_service())
-    
-    # Demonstration of complementary pairs
-    original = generate_day_service()
-    complementary = generate_complementary_service(original)
-    
-    print("\nExample of complementary pair:")
-    print("Original:     ", original)
-    print("Complementary:", complementary)
-    print("Sum:          ", [round(a + b, 1) for a, b in zip(original, complementary)]) 
+    services = generate_microservice_dataset(50, "microservices_data.json")

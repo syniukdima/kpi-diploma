@@ -1,6 +1,0 @@
-Comparison of test results:
-Basic test: average coefficient of variation = 2.22%
-Complementary: average coefficient of variation = 0.00%
-Random: average coefficient of variation = 20.17%
-Generated compl.: average coefficient of variation = 0.00%
-Realistic: average coefficient of variation = 6.53%

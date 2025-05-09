@@ -1,3 +1,5 @@
+import json
+
 def calculate_stability(group):
     """
     Calculates the coefficient of variation for a group of microservices.
@@ -98,7 +100,7 @@ def is_group_available(group_indices, used_indices_set):
     """
     return not any(idx in used_indices_set for idx in group_indices)
 
-def form_multiple_knapsack_groups(microservices, num_knapsacks=None, max_group_size=4, stability_threshold=20.0):
+def form_multiple_knapsack_groups(microservices, max_group_size=4, stability_threshold=20.0):
     """
     Формує групи мікросервісів з використанням інкрементального підходу та розділення піків:
     1. Спочатку намагається групувати по 2, зберігаючи пари з хорошою стабільністю
@@ -232,7 +234,7 @@ def group_original_microservices(microservices, available_indices, max_group_siz
         for group, actual_indices, cv in candidate_groups:
             # Пропускаємо, якщо будь-який індекс вже використовується
             if not is_group_available(actual_indices, used_indices_set):
-                continue
+                    continue
                 
             # Додаємо цю групу до фінальних груп
             final_groups.append(group)
@@ -311,7 +313,7 @@ def process_base_components(base_services, base_indices, max_group_size, stabili
         temp_indices, 
         temp_slots
     )
-    
+                            
     # Додаємо до фінальних результатів сформовані групи базових компонентів
     for i, (group, indices, slots) in enumerate(zip(temp_groups, temp_indices, temp_slots)):
         # Перетворюємо індекси базових компонентів на оригінальні індекси мікросервісів
@@ -393,7 +395,7 @@ def group_base_components(base_services, base_indices, base_available, max_group
             # Виводимо індекси оригінальних мікросервісів для зрозумілості
             real_indices = [base_indices[idx] for idx in actual_indices]
             print(f"  Додано групу базових компонентів з CV: {cv:.2f}% - оригінальні індекси: {real_indices}")
-        
+                            
         # Оновлюємо доступні базові компоненти
         base_available = [idx for idx in base_available if idx not in used_base_set]
         
@@ -469,12 +471,18 @@ def print_results(groups, group_services, slot_sums):
     """
     print("Grouping results:")
     
+    # Зберігаємо інформацію про групи для підсумкової таблиці
+    summary_info = []
+    
     for i, (group, service_indices, sums) in enumerate(zip(groups, group_services, slot_sums)):
         # Calculate statistics
         mean = sum(sums) / len(sums)
         variance = sum((x - mean) ** 2 for x in sums) / len(sums)
         std_dev = variance ** 0.5
         cv = (std_dev / mean) * 100 if mean > 0 else float('inf')
+        
+        # Додаємо інформацію для підсумкової таблиці
+        summary_info.append((i+1, service_indices, cv))
         
         print(f"\nGroup {i+1}:")
         print(f"  Microservices: {service_indices}")
@@ -508,23 +516,66 @@ def print_results(groups, group_services, slot_sums):
             avg_cv = sum(cvs) / len(cvs)
     
     print(f"  Average coefficient of variation: {avg_cv:.2f}%")
+    
+    # Виводимо підсумкову таблицю
+    print("\nSummary Table:")
+    print("-" * 80)
+    print(f"{'Group':^10}|{'Microservices':^50}|{'CV (%)':^15}")
+    print("-" * 80)
+    
+    # Сортуємо групи за зростанням CV
+    for group_num, services, cv in sorted(summary_info, key=lambda x: x[2]):
+        # Форматуємо список мікросервісів для кращого відображення
+        if len(services) <= 6:
+            services_str = str(services)
+        else:
+            services_str = str(services[:5])[:-1] + ", ...]"
+        
+        print(f"{group_num:^10}|{services_str:^50}|{cv:^15.2f}")
+    
+    print("-" * 80)
+
+def load_microservices_from_json(json_file_path):
+    """
+    Завантажує дані мікросервісів з JSON-файлу.
+    
+    Args:
+        json_file_path: Шлях до JSON-файлу з даними мікросервісів
+        
+    Returns:
+        Список часових рядів з навантаженням мікросервісів
+    """
+    try:
+        with open(json_file_path, 'r') as f:
+            microservices = json.load(f)
+        print(f"Завантажено {len(microservices)} мікросервісів з файлу {json_file_path}")
+        return microservices
+    except FileNotFoundError:
+        print(f"Помилка: Файл {json_file_path} не знайдено")
+        return []
+    except json.JSONDecodeError:
+        print(f"Помилка: Невалідний JSON-файл {json_file_path}")
+        return []
 
 # Usage example
 if __name__ == "__main__":
-    # Example with more microservices (6 time slots)
     print("\n" + "="*60)
-    print("Input data:")
     
-    microservices = [
-        [1, 2, 3, 4, 3, 2],  # Microservice 0
-        [2, 1, 1, 2, 3, 4],  # Microservice 1
-        [3, 3, 2, 1, 2, 3],  # Microservice 2
-        [4, 3, 2, 1, 1, 2],  # Microservice 3
-        [2, 3, 4, 3, 2, 1],  # Microservice 4
-        [1, 2, 3, 4, 4, 3],  # Microservice 5
-        [3, 2, 1, 2, 3, 4],  # Microservice 6
-        [4, 3, 2, 1, 2, 3],  # Microservice 7
-    ]
+    # Завантаження даних з JSON-файлу
+    json_file_path = "./microservices_data.json"
+    microservices = load_microservices_from_json(json_file_path)
+    
+    # microservices = [
+    #     [1, 2, 3, 4, 3, 2],  # Microservice 0
+    #         [1, 2, 3, 4, 3, 2],  # Microservice 1
+    #         [2, 1, 1, 2, 3, 4],  # Microservice 2
+    #         [3, 3, 2, 1, 2, 3],  # Microservice 3
+    #         [4, 3, 2, 1, 1, 2],  # Microservice 4
+    #         [2, 3, 4, 3, 2, 1],  # Microservice 5
+    #         [1, 2, 3, 4, 4, 3],  # Microservice 6
+    #         [3, 2, 1, 2, 3, 4],  # Microservice 7
+    #         [4, 3, 2, 1, 2, 3],  # Microservice 8
+    # ]
     
     for i, service in enumerate(microservices):
         print(f"Microservice {i}: {service}")
@@ -534,7 +585,6 @@ if __name__ == "__main__":
         # Set max_group_size to try different group sizes
         groups, group_services, slot_sums = form_multiple_knapsack_groups(
             microservices, 
-            num_knapsacks=3,
             max_group_size=4
         )
         print_results(groups, group_services, slot_sums)
