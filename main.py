@@ -50,14 +50,65 @@ def calculate_load_sum(services):
     
     return slot_sums
 
-def form_multiple_knapsack_groups(microservices, num_knapsacks=None, max_capacity=None):
+def generate_stable_groups(available_indices, microservices, group_size, stability_threshold):
     """
-    Forms groups of microservices using the multiple knapsack problem approach.
+    Generates all possible combinations of the given size from available microservices,
+    filters by stability threshold, and sorts by CV (ascending).
+    
+    Args:
+        available_indices: List of available microservice indices
+        microservices: List of all microservices
+        group_size: Size of groups to generate
+        stability_threshold: Maximum CV value to consider stable
+        
+    Returns:
+        List of tuples (group, indices, cv) sorted by cv ascending
+    """
+    from itertools import combinations
+    
+    candidate_groups = []
+    
+    # Generate all combinations of current group size from available microservices
+    for indices in combinations(range(len(available_indices)), group_size):
+        # Map to actual microservice indices
+        actual_indices = [available_indices[i] for i in indices]
+        # Get the microservices for these indices
+        group = [microservices[idx] for idx in actual_indices]
+        
+        # Calculate stability for this group
+        cv = calculate_stability(group)
+        
+        # If stability is good enough, add to candidates
+        if cv < stability_threshold:
+            candidate_groups.append((group, actual_indices, cv))
+    
+    # Sort candidate groups by stability (lowest CV first)
+    return sorted(candidate_groups, key=lambda x: x[2])
+
+def is_group_available(group_indices, used_indices_set):
+    """
+    Checks if all indices in the group are still available (not used).
+    
+    Args:
+        group_indices: List of indices to check
+        used_indices_set: Set of already used indices
+        
+    Returns:
+        True if all indices are available, False otherwise
+    """
+    return not any(idx in used_indices_set for idx in group_indices)
+
+def form_multiple_knapsack_groups(microservices, num_knapsacks=None, max_group_size=4, stability_threshold=20.0):
+    """
+    Forms groups of microservices using an incremental approach:
+    1. First try to group by 2, keeping pairs with good stability
+    2. Then try to group remaining services by 3, and so on
     
     Args:
         microservices: List of time series for microservice loads
         num_knapsacks: Number of knapsacks (groups) to form. If None, it's determined automatically
-        max_capacity: Maximum capacity for each knapsack. If None, it's calculated based on average load
+        max_group_size: Maximum number of elements in a group to try (default: 4)
+        stability_threshold: Threshold for coefficient of variation (default: 20.0%)
     
     Returns:
         Tuple of (groups, group_services, slot_sums)
@@ -67,149 +118,79 @@ def form_multiple_knapsack_groups(microservices, num_knapsacks=None, max_capacit
     """
     n = len(microservices)
     
-    # If num_knapsacks is not specified, make a reasonable estimate
-    if num_knapsacks is None:
-        num_knapsacks = max(1, n // 3)  # Default: aim for ~3 microservices per group
+    # Initialize final groups
+    final_groups = []
+    final_group_indices = []
+    final_slot_sums = []
     
-    # Calculate weights and values for each microservice
-    weights = []  # Weight = average load of a microservice
-    values = []   # Value = inverse of coefficient of variation (stability value)
+    # Keep track of which microservices are still available
+    available_indices = list(range(n))
     
-    for service in microservices:
-        # Weight is the average load of the microservice
-        weights.append(sum(service) / len(service))
+    # Iterate over group sizes from 2 to max_group_size
+    for group_size in range(2, min(max_group_size + 1, n + 1)):
+        print(f"\nTrying with group size: {group_size}")
         
-        # Value is inversely proportional to the coefficient of variation
-        # More stable services have higher value
-        stability = calculate_stability([service])
-        if stability == 0:
-            values.append(float('inf'))
-        else:
-            values.append(100.0 / stability)  # Higher value for more stable services
-    
-    # Calculate knapsack capacities
-    total_weight = sum(weights)
-    
-    if max_capacity is None:
-        # Set each knapsack's capacity to be slightly more than the average required
-        avg_weight_per_knapsack = total_weight / num_knapsacks
-        max_capacity = avg_weight_per_knapsack * 1.2  # Add 20% buffer
-    
-    knapsack_capacities = [max_capacity] * num_knapsacks
-    
-    # Solve the multiple knapsack problem
-    assignments = solve_multiple_knapsack(weights, values, knapsack_capacities, microservices)
-    
-    # Convert the assignments to the expected output format
-    groups = []
-    group_services = []
-    slot_sums_per_group = []
-    
-    for assignment in assignments:
-        if assignment:  # Skip empty assignments
-            group = [microservices[idx] for idx in assignment]
-            groups.append(group)
-            group_services.append(assignment)
-            slot_sums_per_group.append(calculate_load_sum(group))
-    
-    return groups, group_services, slot_sums_per_group
-
-def solve_multiple_knapsack(weights, values, capacities, microservices):
-    """
-    Solves the multiple knapsack problem using a Worst-Fit greedy approach.
-    
-    Args:
-        weights: List of item weights
-        values: List of item values
-        capacities: List of knapsack capacities
-        microservices: Original microservices data (for stability calculation)
+        if len(available_indices) < group_size:
+            print(f"  Not enough services left for group size {group_size}")
+            break
         
-    Returns:
-        List of lists, where each inner list contains indices of items assigned to a knapsack
-    """
-    n = len(weights)  # Number of items
-    m = len(capacities)  # Number of knapsacks
-    
-    # Sort items by value/weight ratio (efficiency) in descending order
-    items = list(range(n))
-    items.sort(key=lambda i: values[i] / weights[i] if weights[i] > 0 else float('inf'), reverse=True)
-    
-    # Initialize knapsacks
-    knapsacks = [[] for _ in range(m)]
-    remaining_capacities = capacities.copy()
-    
-    # First pass: assign items to knapsacks using Worst-Fit strategy
-    for item in items:
-        # Find the best knapsack for this item - the one with maximum remaining capacity
-        best_knapsack = -1
-        max_remaining = -1
+        # Generate stable groups for current size
+        candidate_groups = generate_stable_groups(
+            available_indices, 
+            microservices, 
+            group_size, 
+            stability_threshold
+        )
         
-        for j in range(m):
-            if weights[item] <= remaining_capacities[j]:
-                if best_knapsack == -1 or remaining_capacities[j] > max_remaining:
-                    max_remaining = remaining_capacities[j]
-                    best_knapsack = j
+        if not candidate_groups:
+            print(f"  No stable groups found with size {group_size}")
+            continue
         
-        # If a suitable knapsack is found, add the item
-        if best_knapsack != -1:
-            knapsacks[best_knapsack].append(item)
-            remaining_capacities[best_knapsack] -= weights[item]
-    
-    # Second pass: try to swap items between knapsacks to improve stability
-    improved = True
-    while improved:
-        improved = False
+        print(f"  Found {len(candidate_groups)} stable groups with size {group_size}")
         
-        for i in range(m):
-            for j in range(i+1, m):
-                # Skip if either knapsack is empty
-                if not knapsacks[i] or not knapsacks[j]:
-                    continue
+        # Create set of all already used indices for quick lookup
+        used_indices_set = set(idx for group in final_group_indices for idx in group)
+        
+        # Add stable groups to final groups
+        for group, actual_indices, cv in candidate_groups:
+            # Skip if any index is already used
+            if not is_group_available(actual_indices, used_indices_set):
+                continue
                 
-                # Try to swap items between knapsacks i and j
-                for item_i_idx, item_i in enumerate(knapsacks[i]):
-                    for item_j_idx, item_j in enumerate(knapsacks[j]):
-                        # Check if swap is feasible (capacity constraints)
-                        weight_diff = weights[item_j] - weights[item_i]
-                        if (remaining_capacities[i] >= weight_diff and 
-                            remaining_capacities[j] >= -weight_diff):
-                            
-                            # Check if swap improves stability
-                            # Make copies of the knapsacks for testing
-                            test_knapsack_i = knapsacks[i].copy()
-                            test_knapsack_j = knapsacks[j].copy()
-                            
-                            # Swap items
-                            test_knapsack_i[item_i_idx] = item_j
-                            test_knapsack_j[item_j_idx] = item_i
-                            
-                            # Calculate stability before and after swap
-                            stability_before = (
-                                calculate_stability([microservices[idx] for idx in knapsacks[i]]) +
-                                calculate_stability([microservices[idx] for idx in knapsacks[j]])
-                            )
-                            
-                            stability_after = (
-                                calculate_stability([microservices[idx] for idx in test_knapsack_i]) +
-                                calculate_stability([microservices[idx] for idx in test_knapsack_j])
-                            )
-                            
-                            # If stability improves, perform the swap
-                            if stability_after < stability_before:
-                                knapsacks[i][item_i_idx] = item_j
-                                knapsacks[j][item_j_idx] = item_i
-                                
-                                # Update remaining capacities
-                                remaining_capacities[i] -= weight_diff
-                                remaining_capacities[j] += weight_diff
-                                
-                                improved = True
-                                break  # Break inner loop
-                    
-                    if improved:
-                        break  # Break outer loop
+            # Add this group to final groups
+            final_groups.append(group)
+            final_group_indices.append(actual_indices)
+            final_slot_sums.append(calculate_load_sum(group))
+            
+            # Update used indices set
+            used_indices_set.update(actual_indices)
+            
+            print(f"  Added group with CV: {cv:.2f}% - {actual_indices}")
+        
+        # Update available indices by removing used ones
+        available_indices = [idx for idx in available_indices if idx not in used_indices_set]
+        
+        print(f"  Remaining services: {len(available_indices)}")
+        
+        # If no more services left, we're done
+        if not available_indices:
+            break
     
-    return knapsacks
+    # Add any remaining microservices as single-element groups
+    for idx in available_indices:
+        final_groups.append([microservices[idx]])
+        final_group_indices.append([idx])
+        final_slot_sums.append(calculate_load_sum([microservices[idx]]))
+        print(f"  Added single-element group: {idx}")
+    
+    # If we didn't form any groups, put each microservice in its own group
+    if not final_groups:
+        print("No groups formed. Creating single-element groups.")
+        final_groups = [[microservice] for microservice in microservices]
+        final_group_indices = [[i] for i in range(n)]
+        final_slot_sums = [calculate_load_sum([microservice]) for microservice in microservices]
+    
+    return final_groups, final_group_indices, final_slot_sums
 
 def print_results(groups, group_services, slot_sums):
     """
@@ -284,8 +265,12 @@ if __name__ == "__main__":
     print("="*60 + "\n")
     
     try:
-        # Set num_knapsacks explicitly to create multiple groups
-        groups, group_services, slot_sums = form_multiple_knapsack_groups(microservices, num_knapsacks=3)
+        # Set max_group_size to try different group sizes
+        groups, group_services, slot_sums = form_multiple_knapsack_groups(
+            microservices, 
+            num_knapsacks=3,
+            max_group_size=4
+        )
         print_results(groups, group_services, slot_sums)
     except ValueError as e:
         print(f"Error: {e}")
