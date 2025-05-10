@@ -1,7 +1,6 @@
 from visualization import Visualizer
 from db_input import DBInput
-from group_finder import form_multiple_knapsack_groups
-from split_extreme_loads import split_microservice_load
+from group_finder import form_multiple_knapsack_groups, split_microservice_load
 
 def test_visualization():
     """

@@ -7,7 +7,7 @@ import datetime
 from typing import List, Dict, Any, Tuple
 
 from db_input import DBInput
-from group_finder import form_multiple_knapsack_groups
+from group_finder import form_multiple_knapsack_groups, split_microservice_load
 from visualization import Visualizer
 
 class MicroserviceGroupingApp:
@@ -502,7 +502,6 @@ class MicroserviceGroupingApp:
         selected_idx = self.service_names.index(selected_name)
         
         # Розділення мікросервісу на базовий та піковий компоненти
-        from split_extreme_loads import split_microservice_load
         base, peak = split_microservice_load(self.microservices[selected_idx])
         
         # Створення фігури matplotlib
