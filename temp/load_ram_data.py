@@ -23,7 +23,7 @@ def load_ram_data():
     
     try:
         # Завантаження даних з файлу
-        with open('microservices_data.json', 'r') as file:
+        with open('temp/microservices_data_modified.json', 'r') as file:
             microservices_data = json.load(file)
         
         print(f"Завантажено дані для {len(microservices_data)} мікросервісів")
@@ -32,7 +32,7 @@ def load_ram_data():
         service_names = [f"service_{i+1}" for i in range(len(microservices_data))]
         
         # Дата та час для вставки
-        target_date = '2015-10-05'
+        target_date = '2015-05-10'
         target_time = '19:00:00'
         
         # Підготовка та вставка даних
@@ -51,7 +51,7 @@ def load_ram_data():
             """
             cursor.execute(query, (
                 service_name,
-                'RAM',
+                'CHANNEL',
                 target_date,
                 target_time,
                 value_json,

@@ -1,6 +1,5 @@
 import unittest
-import numpy as np
-from group_finder import calculate_stability, generate_stable_groups, form_multiple_knapsack_groups
+from group_finder import calculate_stability, form_multiple_knapsack_groups
 import itertools
 
 class TestMicroserviceGrouping(unittest.TestCase):

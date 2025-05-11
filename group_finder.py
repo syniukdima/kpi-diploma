@@ -537,7 +537,7 @@ def print_results(groups, group_services, slot_sums):
 
 import numpy as np
 
-def split_microservice_load(time_series, threshold_std=0.1):
+def split_microservice_load(time_series, threshold_std=0.2):
     """
     Розділяє навантаження мікросервісу на базову та пікову складову.
     
@@ -550,7 +550,7 @@ def split_microservice_load(time_series, threshold_std=0.1):
     
     Args:
         time_series: Часовий ряд навантаження мікросервісу
-        threshold_std: Поріг у стандартних відхиленнях для визначення піків (за замовчуванням 0.1)
+        threshold_std: Поріг у стандартних відхиленнях для визначення піків (за замовчуванням 0.2)
     
     Returns:
         Кортеж з двох списків: (базове_навантаження, пікове_навантаження)

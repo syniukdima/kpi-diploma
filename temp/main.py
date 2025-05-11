@@ -1,4 +1,5 @@
 import json
+from temp.split_extreme_loads import process_unassigned_microservices
 
 def calculate_stability(group):
     """
@@ -121,7 +122,6 @@ def form_multiple_knapsack_groups(microservices, max_group_size=4, stability_thr
         - group_services: Список індексів мікросервісів у кожній групі
         - slot_sums: Список загальних навантажень за часовими слотами для кожної групи
     """
-    from split_extreme_loads import process_unassigned_microservices
     
     n = len(microservices)
     
@@ -567,14 +567,14 @@ if __name__ == "__main__":
     
     microservices = [
         [1, 2, 3, 4, 3, 2],  # Microservice 0
-            [1, 2, 3, 4, 3, 2],  # Microservice 1
-            [2, 1, 1, 2, 3, 4],  # Microservice 2
-            [3, 3, 2, 1, 2, 3],  # Microservice 3
-            [4, 3, 2, 1, 1, 2],  # Microservice 4
-            [2, 3, 4, 3, 2, 1],  # Microservice 5
-            [1, 2, 3, 4, 4, 3],  # Microservice 6
-            [3, 2, 1, 2, 3, 4],  # Microservice 7
-            [4, 3, 2, 1, 2, 3],  # Microservice 8
+        [1, 2, 3, 4, 3, 2],  # Microservice 1
+        [2, 1, 1, 2, 3, 4],  # Microservice 2
+        [3, 3, 2, 1, 2, 3],  # Microservice 3
+        [4, 3, 2, 1, 1, 2],  # Microservice 4
+        [2, 3, 4, 3, 2, 1],  # Microservice 5
+        [1, 2, 3, 4, 4, 3],  # Microservice 6
+        [3, 2, 1, 2, 3, 4],  # Microservice 7
+        [4, 3, 2, 1, 2, 3],  # Microservice 8
     ]
     
     for i, service in enumerate(microservices):

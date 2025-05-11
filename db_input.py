@@ -19,7 +19,7 @@ class DBInput:
         )
         self.cursor = self.connection.cursor(dictionary=True)
 
-    def get_data_for_algorithm(self, metric_type, date=None, time=None, normalization_type="standard"):
+    def get_data_for_algorithm(self, metric_type, date=None, time=None, normalization_type=None):
         """
         Отримання даних у форматі, готовому для алгоритму групування
         
@@ -27,7 +27,7 @@ class DBInput:
             metric_type (str): Тип метрики ('CPU', 'RAM', 'CHANNEL')
             date (str, optional): Дата у форматі 'YYYY-MM-DD'
             time (str, optional): Час у форматі 'HH:MM:SS'
-            normalization_type (str, optional): Тип нормалізації
+            normalization_type (str, optional): Тип нормалізації (якщо None, не фільтрує за типом)
             
         Returns:
             tuple: (microservices, service_names)
@@ -37,9 +37,13 @@ class DBInput:
         query = """
         SELECT service_name, value 
         FROM processed_metrics 
-        WHERE metric_type = %s AND normalization_type = %s
+        WHERE metric_type = %s
         """
-        params = [metric_type, normalization_type]
+        params = [metric_type]
+        
+        if normalization_type:
+            query += " AND normalization_type = %s"
+            params.append(normalization_type)
         
         if date:
             query += " AND date = %s"
