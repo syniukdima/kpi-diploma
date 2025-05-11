@@ -74,8 +74,8 @@ def generate_microservices(num_services, time_slots, pattern_distribution=None):
     
     return microservices
 
-def run_performance_test(num_services_list, time_slots, max_group_size=4, stability_threshold=20.0, 
-                        pattern_distribution=None, num_runs=3):
+def run_performance_test(num_services_list, time_slots, pattern_distribution=None, num_runs=3,
+                          stability_threshold=50.0, max_group_size=3):
     """
     Запускає тест продуктивності для різної кількості мікросервісів.
     
@@ -224,10 +224,8 @@ def plot_results(results):
 
 if __name__ == "__main__":
     # Налаштування тесту
-    num_services_list = [10, 50, 100, 200, 500]
-    time_slots = 20
-    max_group_size = 4
-    stability_threshold = 20.0
+    num_services_list = [5, 10, 25, 50, 100]
+    time_slots = 24
     pattern_distribution = {'stable': 0.25, 'peak': 0.4, 'complementary': 0.25, 'random': 0.1}
     num_runs = 3
     
@@ -235,26 +233,9 @@ if __name__ == "__main__":
     results = run_performance_test(
         num_services_list, 
         time_slots, 
-        max_group_size, 
-        stability_threshold, 
         pattern_distribution, 
         num_runs
     )
     
     # Візуалізуємо результати
     plot_results(results)
-    
-    # Зберігаємо результати в файл
-    with open('performance_results.txt', 'w') as f:
-        f.write("=== РЕЗУЛЬТАТИ ТЕСТУ ПРОДУКТИВНОСТІ ===\n")
-        f.write(f"Кількість таймслотів: {time_slots}\n")
-        f.write(f"Максимальний розмір групи: {max_group_size}\n")
-        f.write(f"Поріг стабільності: {stability_threshold}%\n")
-        f.write(f"Розподіл патернів: {pattern_distribution}\n")
-        f.write(f"Кількість запусків для кожної конфігурації: {num_runs}\n\n")
-        
-        f.write("| Кількість мікросервісів | Час виконання (с) | Кількість груп | Груп/секунду | Середній розмір групи | Середня стабільність (%) |\n")
-        f.write("|--------------------------|-------------------|----------------|--------------|------------------------|---------------------------|\n")
-        
-        for i in range(len(results['num_services'])):
-            f.write(f"| {results['num_services'][i]:24} | {results['execution_time'][i]:17.2f} | {results['num_groups'][i]:14.2f} | {results['groups_per_second'][i]:12.2f} | {results['avg_group_size'][i]:22.2f} | {results['avg_stability'][i]:25.2f} |\n") 

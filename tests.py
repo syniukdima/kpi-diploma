@@ -1,6 +1,8 @@
 import unittest
 from group_finder import calculate_stability, form_multiple_knapsack_groups
 import itertools
+import time
+import random
 
 class TestMicroserviceGrouping(unittest.TestCase):
     def test_calculate_stability(self):
@@ -176,8 +178,6 @@ class TestMicroserviceGrouping(unittest.TestCase):
                     cv = calculate_stability(group_loads)
                     self.assertLess(cv, 20.0, f"Група {group} має CV {cv}, що більше порогу 20.0")
         
-
-        
         # Перевіряємо, що всі мікросервіси розподілені
         all_services = set()
         for service_group in group_services:
@@ -275,6 +275,82 @@ class TestMicroserviceGrouping(unittest.TestCase):
                 cv = calculate_stability(group_loads)
                 self.assertLess(cv, 20.0, "Група з комплементарними піками має бути стабільною")
         self.assertTrue(complementary_peaks_grouped, "Комплементарні піки мають бути згруповані")
+    
+    def test_cv_threshold_boundary(self):
+        """
+        Тест для перевірки граничних випадків коефіцієнта варіації (CV).
+        Перевіряє, що:
+        1. Мікросервіси з CV = 19 (менше порогу 20) утворюють групу
+        2. Мікросервіси з CV = 21 (більше порогу 20) не утворюють групу
+        """
+        # Випадок 1: CV = 19 (менше порогу)
+        # Створюємо два мікросервіси, які разом мають CV близько 19
+        services_cv19 = [
+            [10, 10, 10, 10, 10, 10],
+            [5, 5, 5, 5, 12, 12.5] 
+        ]
+        
+        # Перевіряємо, що CV дійсно близько 19
+        cv = calculate_stability(services_cv19)
+        self.assertGreater(cv, 18.0)
+        self.assertLess(cv, 20.0)
+        print(f"CV для першої пари: {cv:.2f}%")
+        
+        # Запускаємо алгоритм групування з порогом 20
+        groups, group_services, _ = form_multiple_knapsack_groups(
+            services_cv19,
+            max_group_size=2,
+            stability_threshold=20.0
+        )
+        
+        # Перевіряємо, що мікросервіси згруповані разом
+        self.assertEqual(len(groups), 1, "Мікросервіси з CV < 20 мають утворити одну групу")
+        self.assertEqual(len(group_services[0]), 2, "Група має містити обидва мікросервіси")
+        self.assertEqual(set(group_services[0]), {0, 1}, "Група має містити індекси 0 і 1")
+        
+        # Випадок 2: CV = 21 (більше порогу)
+        # Створюємо два мікросервіси, які разом мають CV близько 21
+        services_cv21 = [
+            [10, 10, 10, 10, 10, 10],
+            [5, 5, 5, 5, 12, 13.5] 
+        ]
+        
+        # Перевіряємо, що CV дійсно близько 21
+        cv = calculate_stability(services_cv21)
+        self.assertGreater(cv, 20.0)
+        self.assertLess(cv, 22.0)
+        print(f"CV для другої пари: {cv:.2f}%")
+        
+        # Запускаємо алгоритм групування з порогом 20
+        groups, group_services, _ = form_multiple_knapsack_groups(
+            services_cv21,
+            max_group_size=2,
+            stability_threshold=20.0
+        )
+        
+        # Перевіряємо, що мікросервіси НЕ згруповані разом
+        # Очікуємо або дві окремі групи, або розділення на базові/пікові компоненти
+        grouped_together = False
+        for group in group_services:
+            if len(group) > 1 and 0 in group and 1 in group:
+                grouped_together = True
+                break
+                
+        self.assertFalse(grouped_together, "Мікросервіси з CV > 20 не мають бути згруповані разом")
+        
+        # Перевіряємо, що всі мікросервіси розподілені
+        all_services = set()
+        for service_group in group_services:
+            original_indices = []
+            for idx in service_group:
+                if idx < 0:  # Піковий компонент
+                    original_indices.append(-idx)
+                elif idx >= 1000:  # Базовий компонент
+                    original_indices.append(idx - 1000)
+                else:  # Оригінальний індекс
+                    original_indices.append(idx)
+            all_services.update(original_indices)
+        self.assertEqual(all_services, set(range(len(services_cv21))))
 
 if __name__ == '__main__':
     unittest.main() 
