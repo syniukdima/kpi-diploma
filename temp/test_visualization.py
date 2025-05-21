@@ -8,8 +8,8 @@ def test_visualization():
     """
     # Отримання даних з бази даних
     db_input = DBInput()
-    date = '2015-05-10'
-    time = '19:00:00'
+    date = '2013-08-12'
+    time = '13:40:00'
     metric_type = 'CPU'
     
     microservices, service_names = db_input.get_data_for_algorithm(metric_type, date, time)

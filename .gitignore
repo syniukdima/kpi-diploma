@@ -175,3 +175,5 @@ cython_debug/
 
 # Testing purposes
 testing/*.png
+
+node_modules/

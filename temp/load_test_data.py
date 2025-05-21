@@ -32,7 +32,7 @@ def load_test_data():
     ]
     
     date = "2015-05-10"
-    time = "19:00:00"
+    time = "18:00:00"
     metric_type = "CPU"
     normalization_type = "standard"
     

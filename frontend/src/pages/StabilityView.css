@@ -1,0 +1,155 @@
+.stability-view {
+  max-width: 1000px;
+  margin: 0 auto;
+}
+
+.control-panel {
+  margin: 20px 0;
+  padding: 15px;
+  background-color: #f8f9fa;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 15px;
+}
+
+.form-group {
+  margin-bottom: 10px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 5px;
+  font-weight: 500;
+  color: #2c3e50;
+}
+
+.form-group select,
+.form-group input {
+  width: 100%;
+  padding: 8px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 1rem;
+}
+
+.fetch-button {
+  background-color: #3498db;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 10px 20px;
+  cursor: pointer;
+  font-size: 1rem;
+  transition: background-color 0.2s;
+  grid-column: 1 / -1;
+  margin-top: 10px;
+}
+
+.visualization-button {
+  background-color: #27ae60;
+  margin-top: 5px;
+}
+
+.visualization-button:hover {
+  background-color: #219653;
+}
+
+.fetch-button:hover {
+  background-color: #2980b9;
+}
+
+.fetch-button:disabled {
+  background-color: #95a5a6;
+  cursor: not-allowed;
+}
+
+.chart-container {
+  margin-top: 20px;
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  padding: 20px;
+  min-height: 400px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.stability-chart {
+  max-width: 100%;
+  max-height: 600px;
+}
+
+.placeholder {
+  color: #7f8c8d;
+  text-align: center;
+  font-size: 1.1rem;
+}
+
+.loading {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  color: #7f8c8d;
+  text-align: center;
+  font-size: 1.1rem;
+}
+
+.loading-options {
+  padding: 20px;
+  text-align: center;
+  color: #7f8c8d;
+  font-style: italic;
+}
+
+.error-message {
+  background-color: #f8d7da;
+  color: #721c24;
+  padding: 10px 15px;
+  margin: 10px 0;
+  border-radius: 4px;
+  border: 1px solid #f5c6cb;
+}
+
+.groups-summary {
+  margin: 20px 0;
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  padding: 20px;
+}
+
+.groups-summary h3 {
+  margin-top: 0;
+  margin-bottom: 15px;
+  color: #2c3e50;
+}
+
+.groups-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 15px;
+}
+
+.group-summary-item {
+  background-color: #f8f9fa;
+  border-radius: 6px;
+  padding: 12px;
+  text-align: center;
+}
+
+.group-summary-item h4 {
+  margin: 0 0 8px;
+  color: #2980b9;
+}
+
+.group-summary-item p {
+  margin: 0;
+  color: #7f8c8d;
+  font-size: 0.9rem;
+} 
