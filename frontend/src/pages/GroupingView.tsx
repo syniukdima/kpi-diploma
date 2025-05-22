@@ -803,13 +803,4 @@ const GroupingView: React.FC = () => {
   );
 };
 
-// Допоміжна функція для отримання кольору за індексом
-const getColorForIndex = (index: number): string => {
-  const colors = [
-    '#3498db', '#e74c3c', '#2ecc71', '#f39c12', '#9b59b6',
-    '#1abc9c', '#d35400', '#34495e', '#7f8c8d', '#c0392b'
-  ];
-  return colors[index % colors.length];
-};
-
 export default GroupingView; 

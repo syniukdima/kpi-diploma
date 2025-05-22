@@ -1,35 +1,51 @@
 import React from 'react';
-import { NavLink } from 'react-router-dom';
 import './Sidebar.css';
 
-const Sidebar: React.FC = () => {
+interface SidebarProps {
+  onPageChange: (page: 'grouping' | 'saved-groupings' | 'help') => void;
+  currentPage: 'grouping' | 'saved-groupings' | 'help';
+}
+
+const Sidebar: React.FC<SidebarProps> = ({ onPageChange, currentPage }) => {
   return (
     <nav className="sidebar">
       <ul className="nav-list">
         <li>
-          <NavLink to="/" className={({ isActive }) => isActive ? 'active' : ''}>
-            Головна
-          </NavLink>
-        </li>
-        {/* Тимчасово приховано
-        <li>
-          <NavLink to="/microservices" className={({ isActive }) => isActive ? 'active' : ''}>
-            Мікросервіси
-          </NavLink>
-        </li>
-        */}
-        <li>
-          <NavLink to="/grouping" className={({ isActive }) => isActive ? 'active' : ''}>
+          <a 
+            href="#" 
+            className={currentPage === 'grouping' ? 'active' : ''} 
+            onClick={(e) => {
+              e.preventDefault();
+              onPageChange('grouping');
+            }}
+          >
             Групування
-          </NavLink>
+          </a>
         </li>
-        {/* Тимчасово приховано
         <li>
-          <NavLink to="/stability" className={({ isActive }) => isActive ? 'active' : ''}>
-            Стабільність
-          </NavLink>
+          <a 
+            href="#" 
+            className={currentPage === 'saved-groupings' ? 'active' : ''} 
+            onClick={(e) => {
+              e.preventDefault();
+              onPageChange('saved-groupings');
+            }}
+          >
+            Збережені групування
+          </a>
         </li>
-        */}
+        <li>
+          <a 
+            href="#" 
+            className={currentPage === 'help' ? 'active' : ''} 
+            onClick={(e) => {
+              e.preventDefault();
+              onPageChange('help');
+            }}
+          >
+            Довідка
+          </a>
+        </li>
       </ul>
     </nav>
   );

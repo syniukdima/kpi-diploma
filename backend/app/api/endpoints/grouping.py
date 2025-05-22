@@ -275,7 +275,7 @@ async def get_saved_grouping(date: str, time: str, metric_type: str):
             }
         )
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Помилка при отриманні збереженого варіанту групування: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Помилка при отриманні збереженого варіанту групування: {str(e)}") 
 
 @router.get("/form-groups")
 async def form_groups(
