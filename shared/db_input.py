@@ -69,6 +69,50 @@ class DBInput:
         
         return microservices, service_names
 
+    def get_raw_data_for_algorithm(self, metric_type, date=None, time=None):
+        """
+        Отримання сирих даних метрик для нормалізації
+        
+        Args:
+            metric_type (str): Тип метрики ('CPU', 'RAM', 'CHANNEL')
+            date (str, optional): Дата у форматі 'YYYY-MM-DD'
+            time (str, optional): Час у форматі 'HH:MM:SS'
+            
+        Returns:
+            tuple: (raw_data, service_names)
+                raw_data - список списків сирих значень для кожного мікросервісу
+                service_names - список назв мікросервісів
+        """
+        query = """
+        SELECT service_name, value 
+        FROM raw_metrics 
+        WHERE metric_type = %s
+        """
+        params = [metric_type]
+        
+        if date:
+            query += " AND date = %s"
+            params.append(date)
+        
+        if time:
+            query += " AND time = %s"
+            params.append(time)
+        
+        query += " ORDER BY service_name"
+        
+        self.cursor.execute(query, params)
+        results = self.cursor.fetchall()
+        
+        raw_data = []
+        service_names = []
+        
+        for row in results:
+            service_names.append(row['service_name'])
+            values = json.loads(row['value'])
+            raw_data.append(values)
+        
+        return raw_data, service_names
+
     def close(self):
         """
         Закриття з'єднання з базою даних

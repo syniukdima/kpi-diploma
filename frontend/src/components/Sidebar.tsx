@@ -2,14 +2,38 @@ import React from 'react';
 import './Sidebar.css';
 
 interface SidebarProps {
-  onPageChange: (page: 'grouping' | 'saved-groupings' | 'help') => void;
-  currentPage: 'grouping' | 'saved-groupings' | 'help';
+  onPageChange: (page: 'home' | 'grouping' | 'saved-groupings' | 'help' | 'normalization') => void;
+  currentPage: 'home' | 'grouping' | 'saved-groupings' | 'help' | 'normalization';
 }
 
 const Sidebar: React.FC<SidebarProps> = ({ onPageChange, currentPage }) => {
   return (
     <nav className="sidebar">
       <ul className="nav-list">
+        <li>
+          <a 
+            href="#" 
+            className={currentPage === 'home' ? 'active' : ''} 
+            onClick={(e) => {
+              e.preventDefault();
+              onPageChange('home');
+            }}
+          >
+            Головна
+          </a>
+        </li>
+        <li>
+          <a 
+            href="#" 
+            className={currentPage === 'normalization' ? 'active' : ''} 
+            onClick={(e) => {
+              e.preventDefault();
+              onPageChange('normalization');
+            }}
+          >
+            Нормалізація
+          </a>
+        </li>
         <li>
           <a 
             href="#" 

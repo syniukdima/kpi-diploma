@@ -47,7 +47,7 @@ const GroupingView: React.FC = () => {
   const [metricType, setMetricType] = useState<string>('CPU');
   const [date, setDate] = useState<string>('');
   const [time, setTime] = useState<string>('');
-  const [maxGroupSize, setMaxGroupSize] = useState<number>(3);
+  const [maxGroupSize, setMaxGroupSize] = useState<number>(4);
   const [stabilityThreshold, setStabilityThreshold] = useState<number>(20);
   const [groups, setGroups] = useState<MicroserviceGroup[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
@@ -648,59 +648,58 @@ const GroupingView: React.FC = () => {
             <div className="form-group">
               <label>Тип метрики:</label>
               <select 
-                value={metricType} 
+                value={metricType}
                 onChange={(e) => setMetricType(e.target.value)}
+                disabled={loading || loadingOptions}
               >
-                {availableOptions?.metric_types.map(type => (
+                {availableOptions?.metric_types.map((type) => (
                   <option key={type} value={type}>{type}</option>
                 ))}
               </select>
             </div>
-            
             <div className="form-group">
               <label>Дата:</label>
               <select 
-                value={date} 
-                onChange={(e) => setDate(e.target.value)} 
+                value={date}
+                onChange={(e) => setDate(e.target.value)}
+                disabled={loading || loadingOptions || !availableOptions?.dates.length}
               >
-                {availableOptions?.dates.map(date => (
-                  <option key={date} value={date}>{date}</option>
+                {availableOptions?.dates.map((d) => (
+                  <option key={d} value={d}>{d}</option>
                 ))}
               </select>
             </div>
-            
             <div className="form-group">
               <label>Час:</label>
               <select 
-                value={time} 
+                value={time}
                 onChange={(e) => setTime(e.target.value)}
-                disabled={availableTimes.length === 0}
+                disabled={loading || loadingOptions || !availableTimes.length}
               >
-                {availableTimes.map(time => (
-                  <option key={time} value={time}>{time}</option>
+                {availableTimes.map((t) => (
+                  <option key={t} value={t}>{t}</option>
                 ))}
               </select>
             </div>
-            
-            <div className="form-group">
+            <div className="numeric-input">
               <label>Макс. розмір групи:</label>
               <input 
-                type="number" 
-                min="2" 
-                max="10" 
-                value={maxGroupSize} 
-                onChange={(e) => setMaxGroupSize(parseInt(e.target.value))} 
+                type="number"
+                value={maxGroupSize}
+                onChange={(e) => setMaxGroupSize(Math.max(1, parseInt(e.target.value) || 1))}
+                min="1"
+                disabled={loading}
               />
             </div>
-            
-            <div className="form-group">
+            <div className="numeric-input">
               <label>Поріг стабільності (%):</label>
               <input 
-                type="number" 
-                min="0" 
-                max="100" 
-                value={stabilityThreshold} 
-                onChange={(e) => setStabilityThreshold(parseInt(e.target.value))} 
+                type="number"
+                value={stabilityThreshold}
+                onChange={(e) => setStabilityThreshold(Math.max(0, parseInt(e.target.value) || 0))}
+                min="0"
+                max="100"
+                disabled={loading}
               />
             </div>
           </div>

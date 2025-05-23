@@ -1,14 +1,20 @@
 import React from 'react';
 import './Header.css';
 
-const Header: React.FC = () => {
+interface HeaderProps {
+  onHomeClick: () => void;
+}
+
+const Header: React.FC<HeaderProps> = ({ onHomeClick }) => {
   return (
     <header className="header">
       <div className="logo">
-        <h1>Аналіз мікросервісів</h1>
-      </div>
-      <div className="user-info">
-        <span>Дипломний проект</span>
+        <a href="#" className="home-link" onClick={(e) => {
+          e.preventDefault();
+          onHomeClick();
+        }}>
+          <h1>Групування мікросервісів</h1>
+        </a>
       </div>
     </header>
   );

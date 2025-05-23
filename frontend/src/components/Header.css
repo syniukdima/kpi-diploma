@@ -17,4 +17,13 @@
 
 .user-info {
   font-size: 0.9rem;
+}
+
+.home-link {
+  text-decoration: none;
+  color: inherit;
+}
+
+.home-link:hover h1 {
+  color: #3498db;
 } 
