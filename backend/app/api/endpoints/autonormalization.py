@@ -10,29 +10,14 @@ import numpy as np
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../..")))
 from shared.db_input import DBInput
 from shared.db_output import DBOutput
+from shared.constants import STANDARD_CONFIG
 
 router = APIRouter()
 
-# Стандартна конфігурація сервера
-STANDARD_CONFIG = {
-    "CPU": {
-        "value": 2.5,  # GHz
-        "max_load": 100  # максимальне навантаження у відсотках
-    },
-    "RAM": {
-        "value": 2048,  # MB (2 GB)
-        "max_load": 100  # максимальне навантаження у відсотках
-    },
-    "CHANNEL": {
-        "value": 100,  # Mbps
-        "max_load": 100  # максимальне навантаження у відсотках
-    }
-}
-
 class StandardServerConfig(BaseModel):
-    cpu_ghz: float
-    ram_gb: float
-    network_mbps: float
+    cpu_mhz: float
+    ram_kb: float
+    channel_kb: float
 
 class AnalyzeRequest(BaseModel):
     date: str
@@ -49,9 +34,9 @@ async def get_standard_config():
     Отримати стандартну конфігурацію сервера
     """
     return StandardServerConfig(
-        cpu_ghz=STANDARD_CONFIG["CPU"]["value"],
-        ram_gb=STANDARD_CONFIG["RAM"]["value"] / 1024,  # конвертуємо MB в GB
-        network_mbps=STANDARD_CONFIG["CHANNEL"]["value"]
+        cpu_mhz=STANDARD_CONFIG["CPU"]["value"],
+        ram_kb=STANDARD_CONFIG["RAM"]["value"],
+        channel_kb=STANDARD_CONFIG["CHANNEL"]["value"]
     )
 
 @router.post("/analyze-and-normalize", response_model=AutoNormalizationResult)
@@ -81,13 +66,9 @@ async def analyze_and_normalize(request: AnalyzeRequest):
             
             # Для кожного сервісу рахуємо відсоток використання ресурсу
             for values in raw_data:
-                avg_value = np.mean(values)
-                if metric_type == "RAM":
-                    # Для RAM конвертуємо стандартне значення в кілобайти
-                    standard_value = STANDARD_CONFIG[metric_type]["value"] * 1024  # MB to KB
-                else:
-                    standard_value = STANDARD_CONFIG[metric_type]["value"]
-                percentage = (avg_value / standard_value) * 100
+                max_value = np.max(values)  # Беремо максимальне значення для сервісу
+                standard_value = STANDARD_CONFIG[metric_type]["value"]
+                percentage = (max_value / standard_value) * 100
                 max_percentages[metric_type] = max(max_percentages[metric_type], percentage)
 
         if not metrics_data:
@@ -99,12 +80,15 @@ async def analyze_and_normalize(request: AnalyzeRequest):
         # Визначаємо ключовий ресурс (з найбільшим відсотком використання)
         key_resource = max(max_percentages.items(), key=lambda x: x[1])[0]
         max_percentage = max_percentages[key_resource]
-        scaling_factor = max_percentage / 100 if max_percentage > 100 else 1.0
+        scaling_factor = max_percentage / 100 if max_percentage > 0 else 1.0
 
-        # Нормалізуємо дані тільки для ключового ресурсу
-        if scaling_factor > 1.0:
-            raw_data = metrics_data[key_resource]["data"]
-            service_names = metrics_data[key_resource]["services"]
+        # Нормалізуємо дані для всіх типів метрик з використанням одного scaling_factor
+        for metric_type in [key_resource]:
+            if metric_type not in metrics_data:
+                continue
+                
+            raw_data = metrics_data[metric_type]["data"]
+            service_names = metrics_data[metric_type]["services"]
             
             # Нормалізуємо значення для кожного сервісу
             for i, values in enumerate(raw_data):
@@ -112,7 +96,7 @@ async def analyze_and_normalize(request: AnalyzeRequest):
                 # Зберігаємо нормалізовані значення
                 db_output.save_processed_data(
                     service_names[i],
-                    key_resource,
+                    metric_type,
                     request.date,
                     request.time,
                     normalized_values
@@ -132,22 +116,20 @@ async def analyze_and_normalize(request: AnalyzeRequest):
         # Формуємо рядки з відсотками відхилення для кожного ресурсу
         excesses = []
         for metric_type in ["CPU", "RAM", "CHANNEL"]:  # фіксований порядок
-            percentage = max_percentages[metric_type]
-            # Відхилення = на скільки відсотків більше/менше від стандартного
-            deviation = percentage - 100
-            sign = "+" if deviation > 0 else ""  # додаємо + для позитивних чисел
-            excesses.append(f"{resource_names[metric_type]}: {sign}{deviation:.1f}%")
+            if metric_type in max_percentages:
+                percentage = max_percentages[metric_type]
+                excesses.append(f"{resource_names[metric_type]}: {percentage:.1f}%")
         
         # Формуємо інформацію про стандартний сервер
         server_info = (
-            f"Стандартний сервер: процесор {STANDARD_CONFIG['CPU']['value']} GHz, "
-            f"пам'ять {int(STANDARD_CONFIG['RAM']['value']/1024)} GB, "
-            f"мережа {STANDARD_CONFIG['CHANNEL']['value']} Mbps"
+            f"Стандартний сервер: процесор {STANDARD_CONFIG['CPU']['value']} MHz, "
+            f"пам'ять {STANDARD_CONFIG['RAM']['value']} KB, "
+            f"мережа {STANDARD_CONFIG['CHANNEL']['value']} KB"
         )
         
         message = server_info + "\n\n"
-        message += "Відсоток відхилення від стандартного показника: " + "; ".join(excesses)
-        message += ". Нормалізацію проведено за показником: " + resource_names[key_resource]
+        message += "Максимальний відсоток використання ресурсів: " + "; ".join(excesses)
+        message += f"\nНормалізацію проведено за показником: {resource_names[key_resource]}"
 
         return AutoNormalizationResult(
             key_resource=key_resource,

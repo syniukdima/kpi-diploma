@@ -3,7 +3,7 @@ import json
 import os
 import numpy as np
 from dotenv import load_dotenv
-from datetime import datetime
+from shared.constants import STANDARD_CONFIG
 
 # Завантаження змінних середовища з .env файлу
 load_dotenv()
@@ -169,56 +169,33 @@ class DBOutput:
         
         return success_count
 
-    def normalize_to_percentage(self, values, metric_type, max_ram_kb=2097152, max_channel_kb=None):
+    def normalize_to_percentage(self, values, metric_type):
         """
-        Нормалізує дані в межах 0-100 (відсотки)
+        Нормалізує дані в межах 0-100 (відсотки) відносно стандартної конфігурації
         
         Args:
             values (list): Список значень для нормалізації
             metric_type (str): Тип метрики ('CPU', 'RAM', 'CHANNEL')
-            max_ram_kb (int, optional): Максимальне значення RAM в КБ. За замовчуванням 2097152 КБ (2 ГБ)
-            max_channel_kb (float, optional): Максимальне значення мережевого трафіку в КБ/с.
-                                            Якщо None, буде використано максимальне значення з даних
                                             
         Returns:
             list: Нормалізовані значення у відсотках (0-100), заокруглені до двох знаків після коми
         """
-        values = np.array(values)
-        
-        if metric_type == "CPU":
-            # CPU вже у відсотках, просто обмежуємо діапазон 0-100
-            normalized = np.clip(values, 0, 100)
-        
-        elif metric_type == "RAM":
-            # Нормалізація RAM відносно максимального значення
-            if max_ram_kb <= 0:
-                raise ValueError("max_ram_kb повинен бути більше 0")
-            
-            normalized = (values / max_ram_kb) * 100
-            normalized = np.clip(normalized, 0, 100)
-        
-        elif metric_type == "CHANNEL":
-            # Для CHANNEL використовуємо максимальне значення з вибірки
-            max_value = np.max(values)
-            if max_value > 0:
-                # Лінійне масштабування відносно максимального значення
-                normalized = (values / max_value) * 100
-            else:
-                # Якщо всі значення нульові
-                normalized = np.zeros_like(values)
-            
-            normalized = np.clip(normalized, 0, 100)
-        
-        else:
+        if metric_type not in STANDARD_CONFIG:
             raise ValueError(f"Непідтримуваний тип метрики: {metric_type}")
+
+        values = np.array(values)
+        standard_value = STANDARD_CONFIG[metric_type]["value"]
+        
+        # Нормалізація відносно стандартного значення
+        normalized = (values / standard_value) * 100
+        normalized = np.clip(normalized, 0, 100)
         
         # Заокруглення до двох знаків після коми
         normalized = np.round(normalized, 2)
         
         return normalized.tolist()
 
-    def process_and_save_percentage_data(self, service_name, metric_type, date, time, raw_values, 
-                                       max_ram_kb=2097152, max_channel_kb=None):
+    def process_and_save_percentage_data(self, service_name, metric_type, date, time, raw_values):
         """
         Обробляє дані, нормалізує їх у відсотки (0-100) та зберігає в таблицю processed_metrics
         
@@ -228,17 +205,13 @@ class DBOutput:
             date (str): Дата у форматі 'YYYY-MM-DD'
             time (str): Час у форматі 'HH:MM:SS'
             raw_values (list): Список сирих значень метрики
-            max_ram_kb (int, optional): Максимальне значення RAM в КБ
-            max_channel_kb (float, optional): Максимальне значення мережевого трафіку в КБ/с
             
         Returns:
             bool: True, якщо дані успішно збережено, False - інакше
         """
         try:
             # Нормалізуємо дані у відсотки
-            percentage_values = self.normalize_to_percentage(
-                raw_values, metric_type, max_ram_kb, max_channel_kb
-            )
+            percentage_values = self.normalize_to_percentage(raw_values, metric_type)
             
             # Зберігаємо оброблені дані
             return self.save_processed_data(

@@ -316,4 +316,51 @@
   padding: 5px 10px;
   border-radius: 4px;
   font-size: 0.9rem;
+}
+
+.group-selector {
+  margin: 20px 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+.group-selector label {
+  font-size: 1rem;
+  color: #333;
+}
+
+.group-selector select {
+  padding: 8px 12px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 1rem;
+  min-width: 200px;
+  background-color: white;
+  cursor: pointer;
+}
+
+.group-selector select:hover {
+  border-color: #3498db;
+}
+
+.group-selector select:focus {
+  outline: none;
+  border-color: #3498db;
+  box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
+}
+
+/* Видаляємо старі стилі для бічної панелі */
+.groups-list {
+  display: none;
+}
+
+.group-item {
+  display: none;
+}
+
+.visualization-container.full-width {
+  width: 100%;
+  padding: 20px;
 } 

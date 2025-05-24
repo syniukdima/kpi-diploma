@@ -40,7 +40,7 @@ interface GroupStatisticsForView {
   services: string[];
 }
 
-type VisualizationType = 'groups' | 'load' | 'stability' | 'statistics' | 'distribution' | 'microservices' | 'base-peak';
+type VisualizationType = 'load' | 'stability' | 'statistics' | 'distribution' | 'microservices' | 'base-peak';
 
 const SavedGroupingsPage: React.FC = () => {
   const [groupings, setGroupings] = useState<GroupingData[]>([]);
@@ -50,7 +50,7 @@ const SavedGroupingsPage: React.FC = () => {
   const [showVisualizations, setShowVisualizations] = useState<boolean>(false);
   
   // Стан для візуалізацій
-  const [visualization, setVisualization] = useState<VisualizationType>('groups');
+  const [visualization, setVisualization] = useState<VisualizationType>('load');
   const [groups, setGroups] = useState<number[]>([]);
   const [selectedGroup, setSelectedGroup] = useState<number | null>(null);
   
@@ -146,35 +146,6 @@ const SavedGroupingsPage: React.FC = () => {
     setGroupStatistics([]);
   };
 
-  // Перемикання візуалізації та завантаження відповідних даних
-  const switchVisualization = (visType: VisualizationType) => {
-    setVisualization(visType);
-    
-    // Завантаження даних при необхідності
-    if (showVisualizations && selectedGrouping) {
-      if (visType === 'groups') {
-        // Для вкладки груп не потрібно додатковий запит
-      } else if (visType === 'load' && !loadChartUrl) {
-        fetchLoadChart();
-      } else if (visType === 'stability' && !stabilityChartUrl) {
-        fetchStabilityChart();
-      } else if (visType === 'microservices' && !microservicesChartUrl) {
-        fetchMicroservicesChart();
-      } else if (visType === 'statistics' && groupStatistics.length === 0) {
-        fetchGroupStatistics();
-      }
-      
-      // Для вкладок, що залежать від групи
-      if (selectedGroup !== null) {
-        if (visType === 'distribution' && !distributionChartUrl) {
-          fetchDistributionChart();
-        } else if (visType === 'base-peak' && !basePeakChartUrl) {
-          fetchSplitServices();
-        }
-      }
-    }
-  };
-
   // Обробник натискання на кнопку перегляду результатів
   const handleViewResults = () => {
     if (!selectedGrouping) {
@@ -185,47 +156,46 @@ const SavedGroupingsPage: React.FC = () => {
     // Показуємо візуалізації
     setShowVisualizations(true);
     
-    // Завантажуємо дані для вкладки груп одразу
-    setVisualization('groups');
+    // Встановлюємо початкову вкладку та завантажуємо дані для неї
+    setVisualization('load');
+    fetchLoadChart();
     
     // Завантажуємо дані для інших вкладок у фоновому режимі
     setTimeout(() => {
       fetchMicroservicesChart();
-      fetchLoadChart();
       fetchStabilityChart();
       fetchGroupStatistics();
       fetchSplitServices();
-      
-      // Для вкладок, які залежать від групи, завантажуємо дані, якщо вибрана група
-      if (selectedGroup !== null) {
-        fetchDistributionChart();
-      }
     }, 100);
   };
 
-  // Обробник вибору групи
-  const handleGroupSelect = (groupId: number) => {
-    setSelectedGroup(groupId);
+  // Перемикання візуалізації та завантаження відповідних даних
+  const switchVisualization = (visType: VisualizationType) => {
+    setVisualization(visType);
     
-    // Якщо візуалізації вже відображаються, оновити дані відповідно до вкладки
-    if (showVisualizations) {
-      // Завжди скидаємо дані для кожної вкладки залежної від групи
-      setBasePeakChartUrl(null);
-      setDistributionChartUrl(null);
-
-      // Завантажуємо дані для поточної активної вкладки
-      switch (visualization) {
-        case 'base-peak':
-          fetchSplitServices();
+    // Скидаємо попередні дані при зміні вкладки
+    setSelectedGroup(null);
+    setDistributionChartUrl(null);
+    setLoadChartUrl(null);
+    setStabilityChartUrl(null);
+    setGroupStatistics([]);
+    
+    // Завантаження даних для нової вкладки
+    if (showVisualizations && selectedGrouping) {
+      switch (visType) {
+        case 'load':
+          fetchLoadChart();
+          break;
+        case 'stability':
+          fetchStabilityChart();
+          break;
+        case 'statistics':
+          fetchGroupStatistics();
           break;
         case 'distribution':
-          fetchDistributionChart();
+          // Для distribution не робимо автоматичний запит, чекаємо вибору групи
           break;
       }
-
-      // Додатково завантажуємо інші дані у фоновому режимі
-      if (visualization !== 'base-peak') setTimeout(fetchSplitServices, 100);
-      if (visualization !== 'distribution') setTimeout(fetchDistributionChart, 100);
     }
   };
 
@@ -396,8 +366,8 @@ const SavedGroupingsPage: React.FC = () => {
   };
   
   // Завантаження графіку розподілу навантаження
-  const fetchDistributionChart = async () => {
-    if (!selectedGrouping || selectedGroup === null) return;
+  const fetchDistributionChart = async (groupId: number) => {
+    if (!selectedGrouping) return;
     
     try {
       setLoadingDistributionChart(true);
@@ -406,7 +376,7 @@ const SavedGroupingsPage: React.FC = () => {
       
       // Формування URL із параметрами запиту
       const requestUrl = new URL(`${API_BASE_URL}/api/visualization/group-load-distribution`);
-      requestUrl.searchParams.append('group_id', selectedGroup.toString());
+      requestUrl.searchParams.append('group_id', groupId.toString());
       requestUrl.searchParams.append('date', date);
       requestUrl.searchParams.append('time', time);
       requestUrl.searchParams.append('metric_type', metric_type);
@@ -443,33 +413,10 @@ const SavedGroupingsPage: React.FC = () => {
       // Виконання запиту
       const response = await axios.get(requestUrl.toString());
       
-      console.log('Отримані дані статистики:', response.data);
-      
-      // Перевіряємо структуру відповіді
-      if (response.data && Array.isArray(response.data)) {
-        // Якщо відповідь - масив об'єктів (старий формат)
-        const statistics: GroupStatisticsForView[] = response.data.map((stat: any) => ({
-          group_id: stat.group_id || 0,
-          num_services: stat.service_count || 0,
-          mean_load: stat.mean_load || 0,
-          peak_load: stat.peak_load || 0,
-          stability: stat.coefficient_of_variation || 0,
-          services: (stat.services || []).map((s: any) => typeof s === 'string' ? s : (s.name || ''))
-        }));
-        setGroupStatistics(statistics);
-      } else if (response.data && response.data.statistics && Array.isArray(response.data.statistics)) {
-        // Якщо відповідь має вкладений масив statistics
-        const statistics: GroupStatisticsForView[] = response.data.statistics.map((stat: any) => ({
-          group_id: stat.group_id || 0,
-          num_services: stat.service_count || 0,
-          mean_load: stat.mean_load || 0,
-          peak_load: stat.peak_load || 0,
-          stability: stat.coefficient_of_variation || 0,
-          services: (stat.services || []).map((s: any) => typeof s === 'string' ? s : (s.name || ''))
-        }));
-        setGroupStatistics(statistics);
+      // Встановлюємо статистику
+      if (response.data && response.data.statistics) {
+        setGroupStatistics(response.data.statistics);
       } else {
-        // Якщо формат даних не відповідає жодному з очікуваних
         console.error('Неочікуваний формат даних статистики', response.data);
         setGroupStatistics([]);
       }
@@ -499,26 +446,6 @@ const SavedGroupingsPage: React.FC = () => {
     }
 
     switch (visualization) {
-      case 'groups':
-        return (
-          <div className="groups-details">
-            {selectedGroup !== null && (
-              <div className="group-details">
-                <h3>Деталі групи {selectedGroup}:</h3>
-                {groupStatistics.find(stats => stats.group_id === selectedGroup) && (
-                  <div className="services-list">
-                    {groupStatistics.find(stats => stats.group_id === selectedGroup)?.services.map((service, idx) => (
-                      <div key={idx} className="service-item">
-                        <span>{service}</span>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-        );
-      
       case 'load':
         return (
           <div className="load-chart">
@@ -616,6 +543,27 @@ const SavedGroupingsPage: React.FC = () => {
       case 'distribution':
         return (
           <div className="distribution-chart-container">
+            <div className="group-selector">
+              <label htmlFor="group-select">Виберіть групу: </label>
+              <select 
+                id="group-select"
+                value={selectedGroup || ''}
+                onChange={(e) => {
+                  const groupId = parseInt(e.target.value);
+                  if (!isNaN(groupId)) {
+                    setSelectedGroup(groupId);
+                    setDistributionChartUrl(null);
+                    fetchDistributionChart(groupId);
+                  }
+                }}
+              >
+                <option value="">Оберіть групу</option>
+                {groups.map(groupId => (
+                  <option key={groupId} value={groupId}>Група {groupId}</option>
+                ))}
+              </select>
+            </div>
+            
             {!selectedGroup ? (
               <div className="placeholder">
                 Виберіть групу для відображення розподілу навантаження
@@ -634,7 +582,7 @@ const SavedGroupingsPage: React.FC = () => {
               <div className="placeholder">
                 <button 
                   className="fetch-button"
-                  onClick={fetchDistributionChart}
+                  onClick={() => selectedGroup && fetchDistributionChart(selectedGroup)}
                 >
                   Завантажити графік розподілу навантаження
                 </button>
@@ -788,13 +736,7 @@ const SavedGroupingsPage: React.FC = () => {
         <>
           <div className="visualization-tabs">
             <button 
-              className={`tab-button ${visualization === 'groups' ? 'active' : ''}`} 
-              onClick={() => switchVisualization('groups')}
-            >
-              Групи
-            </button>
-            <button 
-              className={`tab-button ${visualization === 'load' ? 'active' : ''}`} 
+              className={`tab-button ${visualization === 'load' ? 'active' : ''}`}
               onClick={() => switchVisualization('load')}
             >
               Навантаження груп
@@ -831,26 +773,8 @@ const SavedGroupingsPage: React.FC = () => {
             </button>
           </div>
           
-          <div className="groups-container">
-            {(visualization === 'groups' || visualization === 'distribution') && (
-              <div className="groups-list">
-                {groups.map((groupId) => (
-                  <div 
-                    key={groupId} 
-                    className={`group-item ${selectedGroup === groupId ? 'selected' : ''}`}
-                    onClick={() => {
-                      handleGroupSelect(groupId);
-                    }}
-                  >
-                    <h4>Група {groupId}</h4>
-                  </div>
-                ))}
-              </div>
-            )}
-            
-            <div className={`visualization-container ${(visualization === 'groups' || visualization === 'distribution') ? '' : 'full-width'}`}>
-              {renderVisualization()}
-            </div>
+          <div className="visualization-container full-width">
+            {renderVisualization()}
           </div>
         </>
       )}

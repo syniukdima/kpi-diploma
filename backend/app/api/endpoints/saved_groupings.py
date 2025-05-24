@@ -12,7 +12,7 @@ import numpy as np
 # Додавання шляху до кореню проекту
 sys.path.append(os.path.abspath("../.."))
 
-from db_output import DBOutput
+from shared.db_output import DBOutput
 
 router = APIRouter()
 
@@ -184,70 +184,78 @@ async def get_group_statistics(
     date: str = Query(..., description="Дата групування у форматі YYYY-MM-DD"),
     time: str = Query(..., description="Час групування"),
     metric_type: str = Query(..., description="Тип метрики"),
-    group_id: int = Query(..., description="ID групи"),
     db_output: DBOutput = Depends(get_db_output)
 ):
     """
-    Отримує статистику для вибраної групи
+    Отримує статистику для всіх груп
     """
     try:
-        # Запит до БД для отримання статистики групи
+        # Запит до БД для отримання статистики всіх груп
         query = """
         SELECT 
+            group_id,
             service_name, 
             component_type, 
             load_data,
             stability_coefficient
         FROM grouping_results
-        WHERE date = %s AND time = %s AND metric_type = %s AND group_id = %s
-        ORDER BY service_name
+        WHERE date = %s AND time = %s AND metric_type = %s
+        ORDER BY group_id, service_name
         """
         
-        db_output.cursor.execute(query, (date, time, metric_type, group_id))
+        db_output.cursor.execute(query, (date, time, metric_type))
         results = db_output.cursor.fetchall()
         
         if not results:
-            raise HTTPException(status_code=404, detail=f"Група {group_id} не знайдена")
+            raise HTTPException(status_code=404, detail="Групи не знайдені")
         
-        services = []
-        service_loads = []
-        
+        # Групуємо результати по group_id
+        groups_data = {}
         for row in results:
+            group_id = row["group_id"]
+            if group_id not in groups_data:
+                groups_data[group_id] = {
+                    "services": [],
+                    "loads": []
+                }
+            
             service_name = row["service_name"]
             component_type = row["component_type"]
             load_data = json.loads(row["load_data"]) if isinstance(row["load_data"], str) else row["load_data"]
             
-            services.append({
+            groups_data[group_id]["services"].append({
                 "name": service_name,
                 "component_type": component_type
             })
-            service_loads.append(load_data)
+            groups_data[group_id]["loads"].append(load_data)
         
-        # Обчислення загального навантаження групи
-        total_load = np.sum(service_loads, axis=0).tolist() if service_loads else []
+        # Формуємо статистику для кожної групи
+        statistics = []
+        for group_id, data in groups_data.items():
+            service_loads = data["loads"]
+            total_load = np.sum(service_loads, axis=0).tolist() if service_loads else []
+            
+            # Обчислення статистики
+            if total_load:
+                mean_load = np.mean(total_load)
+                max_load = np.max(total_load)
+                std_dev = np.std(total_load)
+                cv = (std_dev / mean_load * 100) if mean_load > 0 else 0
+            else:
+                mean_load = 0
+                max_load = 0
+                cv = 0
+            
+            statistics.append({
+                "group_id": group_id,
+                "num_services": len(data["services"]),
+                "services": [s["name"] for s in data["services"]],
+                "mean_load": round(mean_load, 2),
+                "peak_load": round(max_load, 2),
+                "stability": round(cv, 2)
+            })
         
-        # Обчислення статистики
-        if total_load:
-            mean_load = np.mean(total_load)
-            max_load = np.max(total_load)
-            std_dev = np.std(total_load)
-            cv = (std_dev / mean_load * 100) if mean_load > 0 else 0
-        else:
-            mean_load = 0
-            max_load = 0
-            cv = 0
-        
-        statistics = {
-            "group_id": group_id,
-            "service_count": len(services),
-            "services": services,
-            "mean_load": round(mean_load, 2),
-            "peak_load": round(max_load, 2),
-            "coefficient_of_variation": round(cv, 2),
-            "total_load": total_load
-        }
-        
-        return statistics
+        return {"statistics": statistics}
     
     except HTTPException:
         raise

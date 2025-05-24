@@ -73,9 +73,9 @@ async def run_grouping(request: GroupingRequest):
             result_groups.append(
                 GroupItem(
                     group_id=i + 1,
-                    services=services,
-                    total_load=slot_sums[i],
-                    stability=stability
+                services=services,
+                total_load=slot_sums[i],
+                stability=stability
                 )
             )
         

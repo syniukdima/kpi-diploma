@@ -5,8 +5,9 @@ import axios from 'axios';
 const API_BASE_URL = 'http://localhost:8000';
 
 interface MicroserviceGroup {
-  id: number;
+  group_number: number;
   services: string[];
+  values: number[];
 }
 
 interface AvailableOptions {
@@ -34,14 +35,7 @@ interface TimeSeriesData {
   data: TimeSeriesPoint[];
 }
 
-interface ChartData {
-  series: TimeSeriesData[];
-  title: string;
-  xlabel: string;
-  ylabel: string;
-}
-
-type VisualizationType = 'groups' | 'load' | 'stability' | 'statistics' | 'distribution' | 'microservices' | 'base-peak';
+type VisualizationType = 'load' | 'stability' | 'statistics' | 'distribution' | 'microservices' | 'base-peak';
 
 const GroupingView: React.FC = () => {
   const [metricType, setMetricType] = useState<string>('CPU');
@@ -49,7 +43,8 @@ const GroupingView: React.FC = () => {
   const [time, setTime] = useState<string>('');
   const [maxGroupSize, setMaxGroupSize] = useState<number>(4);
   const [stabilityThreshold, setStabilityThreshold] = useState<number>(20);
-  const [groups, setGroups] = useState<MicroserviceGroup[]>([]);
+  const [groups, setGroups] = useState<number[]>([]);
+  const [groupDetails, setGroupDetails] = useState<MicroserviceGroup[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [selectedGroup, setSelectedGroup] = useState<number | null>(null);
@@ -62,7 +57,7 @@ const GroupingView: React.FC = () => {
   const [loadingOptions, setLoadingOptions] = useState<boolean>(false);
   
   // Стан для візуалізацій
-  const [visualization, setVisualization] = useState<VisualizationType>('groups');
+  const [visualization, setVisualization] = useState<VisualizationType>('load');
   const [loadChartUrl, setLoadChartUrl] = useState<string | null>(null);
   const [loadingLoadChart, setLoadingLoadChart] = useState<boolean>(false);
   const [stabilityChartUrl, setStabilityChartUrl] = useState<string | null>(null);
@@ -140,6 +135,8 @@ const GroupingView: React.FC = () => {
       setGroupStatistics([]);
       setDistributionChartUrl(null);
       setMicroservicesChartUrl(null);
+      setBasePeakChartUrl(null);
+      setSplitServices([]);
       
       // Формування URL із параметрами запиту
       const url = new URL(`${API_BASE_URL}/api/grouping/form-groups`);
@@ -152,13 +149,29 @@ const GroupingView: React.FC = () => {
       // Виконання запиту
       const response = await axios.get(url.toString());
       
-      // Обробка відповіді
-      setGroups(response.data.groups);
+      // Логування відповіді
+      console.log('Response data:', response.data);
+      console.log('Groups from response:', response.data.groups);
       
-      // Автоматично завантажити графік навантаження
-      if (response.data.groups.length > 0) {
+      // Обробка відповіді
+      const groupData = response.data.groups;
+      console.log('Group data before mapping:', groupData);
+      
+      // Перевірка структури даних та коректне мапування
+      const groupIds = groupData.map((g: any) => {
+        console.log('Processing group:', g);
+        return typeof g === 'object' ? g.group_number : g;
+      });
+      
+      console.log('Mapped group IDs:', groupIds);
+      
+      setGroupDetails(groupData);
+      setGroups(groupIds);
+      
+      // Автоматично завантажити дані для початкової вкладки
+      if (groupData.length > 0) {
+        setVisualization('load');
         fetchGroupLoadData();
-        fetchStabilityChart();
       }
     } catch (err) {
       console.error('Помилка при отриманні груп:', err);
@@ -381,21 +394,29 @@ const GroupingView: React.FC = () => {
   const switchVisualization = (visType: VisualizationType) => {
     setVisualization(visType);
     
-    // Завантаження даних при необхідності
-    if (groups.length > 0) {
-      if (visType === 'load' && !loadChartUrl) {
-        fetchGroupLoadData();
-      } else if (visType === 'stability' && !stabilityChartUrl) {
-        fetchStabilityChart();
-      } else if (visType === 'statistics' && groupStatistics.length === 0) {
-        fetchGroupStatistics();
-      } else if (visType === 'distribution' && selectedGroup && !distributionChartUrl) {
-        fetchDistributionChart(selectedGroup);
-      } else if (visType === 'microservices' && !microservicesChartUrl) {
-        fetchMicroservicesData();
-      } else if (visType === 'base-peak' && !basePeakChartUrl) {
-        fetchBasePeakData();
-      }
+    // Завантаження даних при зміні вкладки
+    switch (visType) {
+      case 'load':
+        if (!loadChartUrl) fetchGroupLoadData();
+        break;
+      case 'stability':
+        if (!stabilityChartUrl) fetchStabilityChart();
+        break;
+      case 'statistics':
+        if (groupStatistics.length === 0) fetchGroupStatistics();
+        break;
+      case 'microservices':
+        if (!microservicesChartUrl) fetchMicroservicesData();
+        break;
+      case 'base-peak':
+        if (splitServices.length === 0) fetchBasePeakData();
+        break;
+    }
+    
+    // Якщо вибрана група і відкрита вкладка distribution
+    if (selectedGroup !== null && visType === 'distribution') {
+      fetchDistributionChart(selectedGroup);
+      console.log(selectedGroup);
     }
   };
   
@@ -405,25 +426,6 @@ const GroupingView: React.FC = () => {
   // Рендерінг візуалізацій
   const renderVisualization = () => {
     switch (visualization) {
-      case 'groups':
-        return (
-          <div className="groups-details">
-            {selectedGroup !== null && (
-              <div className="group-details">
-                <h3>Деталі групи {selectedGroup}:</h3>
-                
-                <div className="services-list">
-                  {groups.find(g => g.id === selectedGroup)?.services.map((service, idx) => (
-                    <div key={idx} className="service-item">
-                      <span>{service}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-        );
-      
       case 'load':
         return (
           <div className="load-chart">
@@ -520,6 +522,39 @@ const GroupingView: React.FC = () => {
       case 'distribution':
         return (
           <div className="distribution-chart-container">
+            <div className="group-selector">
+              <label htmlFor="group-select">Виберіть групу: </label>
+              <select 
+                id="group-select"
+                value={selectedGroup || ''}
+                onChange={(e) => {
+                  // Перевіряємо, що значення не пусте
+                  if (e.target.value) {
+                    const groupId = parseInt(e.target.value);
+                    // Перевіряємо, що значення успішно конвертовано в число
+                    if (!isNaN(groupId)) {
+                      setSelectedGroup(groupId);
+                      setDistributionChartUrl(null);
+                      fetchDistributionChart(groupId);
+                    }
+                  } else {
+                    setSelectedGroup(null);
+                    setDistributionChartUrl(null);
+                  }
+                }}
+              >
+                <option value="">Оберіть групу</option>
+                {groups.map(groupId => {
+                  const groupInfo = groupDetails.find(g => g.group_number === groupId);
+                  return (
+                    <option key={groupId} value={groupId}>
+                      Група {groupId} {groupInfo ? `(${groupInfo.services.length} сервісів)` : ''}
+                    </option>
+                  );
+                })}
+              </select>
+            </div>
+            
             {!selectedGroup ? (
               <div className="placeholder">
                 Виберіть групу для відображення розподілу навантаження
@@ -538,8 +573,12 @@ const GroupingView: React.FC = () => {
               <div className="placeholder">
                 <button 
                   className="fetch-button"
-                  onClick={() => fetchDistributionChart(selectedGroup)}
-                  disabled={loading || !selectedGroup}
+                  onClick={() => {
+                    if (selectedGroup !== null && !isNaN(selectedGroup)) {
+                      fetchDistributionChart(selectedGroup);
+                    }
+                  }}
+                  disabled={loading || !selectedGroup || isNaN(selectedGroup)}
                 >
                   Завантажити графік розподілу навантаження
                 </button>
@@ -720,12 +759,6 @@ const GroupingView: React.FC = () => {
         <>
           <div className="visualization-tabs">
             <button 
-              className={`tab-button ${visualization === 'groups' ? 'active' : ''}`} 
-              onClick={() => switchVisualization('groups')}
-            >
-              Групи
-            </button>
-            <button 
               className={`tab-button ${visualization === 'load' ? 'active' : ''}`} 
               onClick={() => switchVisualization('load')}
             >
@@ -764,29 +797,7 @@ const GroupingView: React.FC = () => {
           </div>
           
           <div className="groups-container">
-            {(visualization === 'groups' || visualization === 'distribution') && (
-              <div className="groups-list">
-                {groups.map((group) => (
-                  <div 
-                    key={group.id} 
-                    className={`group-item ${selectedGroup === group.id ? 'selected' : ''}`}
-                    onClick={() => {
-                      setSelectedGroup(group.id);
-                      // Якщо вибрано вкладку розподілу і змінилася група, завантажити новий графік
-                      if (visualization === 'distribution') {
-                        setDistributionChartUrl(null);
-                        fetchDistributionChart(group.id);
-                      }
-                    }}
-                  >
-                    <h4>Група {group.id}</h4>
-                    <div className="service-count">{group.services.length} сервісів</div>
-                  </div>
-                ))}
-              </div>
-            )}
-            
-            <div className={`visualization-container ${(visualization === 'groups' || visualization === 'distribution') ? '' : 'full-width'}`}>
+            <div className="visualization-container full-width">
               {renderVisualization()}
             </div>
           </div>

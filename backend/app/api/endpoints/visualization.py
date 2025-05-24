@@ -153,15 +153,20 @@ async def get_stability_chart(request: StabilityRequest):
         
         for i, group in enumerate(request.groups):
             # Обчислення коефіцієнта варіації
-            stability = calculate_stability(group)
-            cv_values.append(stability if stability != float('inf') else 100)
+            time_slots = len(group[0]) if group else 0
+            total_load = [0] * time_slots
             
-            # Формування міток для груп
-            if request.group_ids and len(request.group_ids) == len(request.groups):
-                label = f"Група {request.group_ids[i]}"
-            else:
-                label = f"Група {i+1}"
-            group_labels.append(label)
+            for service in group:
+                for t in range(time_slots):
+                    total_load[t] += service[t]
+            
+            # Обчислення коефіцієнта варіації
+            mean = np.mean(total_load)
+            std_dev = np.std(total_load)
+            cv = (std_dev / mean) * 100 if mean > 0 else float('inf')
+            
+            cv_values.append(cv if cv != float('inf') else 100)  # Обмеження для візуалізації
+            group_labels.append(f"Група {i+1}")
         
         # Побудова графіка
         plt.bar(group_labels, cv_values)

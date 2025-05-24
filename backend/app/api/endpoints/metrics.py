@@ -117,7 +117,7 @@ async def get_metrics_data(
         db_input.close()
         return MetricsResponse(microservices=result)
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Помилка при отриманні даних метрик: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Помилка при отриманні даних метрик: {str(e)}") 
 
 @router.get("/available-options", response_model=AvailableOptions)
 async def get_available_options():

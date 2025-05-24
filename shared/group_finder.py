@@ -1,5 +1,6 @@
 import json
-from db_input import DBInput
+from shared.db_input import DBInput
+import numpy as np
 
 def calculate_stability(group):
     """
@@ -24,7 +25,7 @@ def calculate_stability(group):
     mean = sum(slot_sums) / len(slot_sums)
     
     if mean == 0:
-        return float('inf')
+        return 0 # empty == stable
     
     variance = sum((x - mean) ** 2 for x in slot_sums) / len(slot_sums)
     std_dev = variance ** 0.5
@@ -534,8 +535,6 @@ def print_results(groups, group_services, slot_sums):
         print(f"{group_num:^10}|{services_str:^50}|{cv:^15.2f}")
     
     print("-" * 80)
-
-import numpy as np
 
 def split_microservice_load(time_series, threshold_std=0.2):
     """
