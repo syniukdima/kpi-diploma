@@ -49,8 +49,7 @@ class GroupStatisticsResponse(BaseModel):
 async def get_microservices_chart(
     metric_type: str = Query(..., description="Тип метрики (CPU, RAM, CHANNEL)"),
     date: str = Query(..., description="Дата у форматі YYYY-MM-DD"),
-    time: str = Query(..., description="Час у форматі HH:MM:SS"),
-    normalization_type: Optional[str] = Query(None, description="Тип нормалізації")
+    time: str = Query(..., description="Час у форматі HH:MM:SS")
 ):
     """
     Отримання даних для графіку часових рядів мікросервісів
@@ -60,7 +59,7 @@ async def get_microservices_chart(
         
         # Отримання даних для алгоритму
         microservices, service_names = db_input.get_data_for_algorithm(
-            metric_type, date, time, normalization_type
+            metric_type, date, time
         )
         
         db_input.close()
@@ -86,8 +85,7 @@ async def get_split_chart(
     service_name: str,
     metric_type: str = Query(..., description="Тип метрики (CPU, RAM, CHANNEL)"),
     date: str = Query(..., description="Дата у форматі YYYY-MM-DD"),
-    time: str = Query(..., description="Час у форматі HH:MM:SS"),
-    normalization_type: Optional[str] = Query(None, description="Тип нормалізації")
+    time: str = Query(..., description="Час у форматі HH:MM:SS")
 ):
     """
     Отримання даних для графіку розділення мікросервісу на базовий та піковий компоненти
@@ -97,7 +95,7 @@ async def get_split_chart(
         
         # Отримання даних для алгоритму
         microservices, service_names = db_input.get_data_for_algorithm(
-            metric_type, date, time, normalization_type
+            metric_type, date, time
         )
         
         db_input.close()
@@ -124,13 +122,9 @@ async def get_split_chart(
         peak_data = [TimeSeriesPoint(x=i, y=val) for i, val in enumerate(peak)]
         series.append(TimeSeriesData(name="Піковий компонент", data=peak_data))
         
-        # Загальне навантаження
-        total_data = [TimeSeriesPoint(x=i, y=base[i] + peak[i]) for i in range(len(base))]
-        series.append(TimeSeriesData(name="Загальне навантаження", data=total_data))
-        
         return ChartData(
             series=series,
-            title=f"Розділення навантаження для мікросервісу: {service_name}"
+            title=f"Розділення навантаження {service_name} ({metric_type}, {date}, {time})"
         )
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Помилка при отриманні даних для графіку: {str(e)}")
@@ -194,8 +188,7 @@ async def get_group_load_chart(
     date: str = Query(..., description="Дата у форматі YYYY-MM-DD"),
     time: str = Query(..., description="Час у форматі HH:MM:SS"),
     max_group_size: int = Query(4, description="Максимальний розмір групи"),
-    stability_threshold: float = Query(20.0, description="Поріг стабільності (%)"),
-    normalization_type: Optional[str] = Query(None, description="Тип нормалізації")
+    stability_threshold: float = Query(20.0, description="Поріг стабільності (%)")
 ):
     """
     Отримання графіку загального навантаження груп у форматі PNG
@@ -205,7 +198,7 @@ async def get_group_load_chart(
         
         # Отримання даних для алгоритму
         microservices, service_names = db_input.get_data_for_algorithm(
-            metric_type, date, time, normalization_type
+            metric_type, date, time
         )
         
         db_input.close()
@@ -260,8 +253,7 @@ async def get_group_statistics(
     date: str = Query(..., description="Дата у форматі YYYY-MM-DD"),
     time: str = Query(..., description="Час у форматі HH:MM:SS"),
     max_group_size: int = Query(4, description="Максимальний розмір групи"),
-    stability_threshold: float = Query(20.0, description="Поріг стабільності (%)"),
-    normalization_type: Optional[str] = Query(None, description="Тип нормалізації")
+    stability_threshold: float = Query(20.0, description="Поріг стабільності (%)")
 ):
     """
     Отримання статистики по групах
@@ -271,7 +263,7 @@ async def get_group_statistics(
         
         # Отримання даних для алгоритму
         microservices, service_names = db_input.get_data_for_algorithm(
-            metric_type, date, time, normalization_type
+            metric_type, date, time
         )
         
         db_input.close()
@@ -327,8 +319,7 @@ async def get_load_distribution_chart(
     date: str = Query(..., description="Дата у форматі YYYY-MM-DD"),
     time: str = Query(..., description="Час у форматі HH:MM:SS"),
     max_group_size: int = Query(4, description="Максимальний розмір групи"),
-    stability_threshold: float = Query(20.0, description="Поріг стабільності (%)"),
-    normalization_type: Optional[str] = Query(None, description="Тип нормалізації")
+    stability_threshold: float = Query(20.0, description="Поріг стабільності (%)")
 ):
     """
     Отримання зображення графіку розподілу навантаження в групі за часовими слотами
@@ -338,7 +329,7 @@ async def get_load_distribution_chart(
         
         # Отримання даних для алгоритму
         microservices, service_names = db_input.get_data_for_algorithm(
-            metric_type, date, time, normalization_type
+            metric_type, date, time
         )
         
         db_input.close()
@@ -453,8 +444,7 @@ async def get_stability_direct_chart(
     date: str = Query(..., description="Дата у форматі YYYY-MM-DD"),
     time: str = Query(..., description="Час у форматі HH:MM:SS"),
     max_group_size: int = Query(4, description="Максимальний розмір групи"),
-    stability_threshold: float = Query(20.0, description="Поріг стабільності (%)"),
-    normalization_type: Optional[str] = Query(None, description="Тип нормалізації")
+    stability_threshold: float = Query(20.0, description="Поріг стабільності (%)")
 ):
     """
     Отримання зображення графіку стабільності груп на основі даних з сервера
@@ -464,7 +454,7 @@ async def get_stability_direct_chart(
         
         # Отримання даних для алгоритму
         microservices, service_names = db_input.get_data_for_algorithm(
-            metric_type, date, time, normalization_type
+            metric_type, date, time
         )
         
         db_input.close()
@@ -523,8 +513,7 @@ async def get_stability_direct_chart(
 async def get_microservices_chart(
     metric_type: str = Query(..., description="Тип метрики (CPU, RAM, CHANNEL)"),
     date: str = Query(..., description="Дата у форматі YYYY-MM-DD"),
-    time: str = Query(..., description="Час у форматі HH:MM:SS"),
-    normalization_type: Optional[str] = Query(None, description="Тип нормалізації")
+    time: str = Query(..., description="Час у форматі HH:MM:SS")
 ):
     """
     Отримання графіку часових рядів мікросервісів у форматі PNG
@@ -534,7 +523,7 @@ async def get_microservices_chart(
         
         # Отримання даних для алгоритму
         microservices, service_names = db_input.get_data_for_algorithm(
-            metric_type, date, time, normalization_type
+            metric_type, date, time
         )
         
         db_input.close()
@@ -581,8 +570,7 @@ async def get_base_peak_component_chart(
     service_name: str = Query(..., description="Назва мікросервісу"),
     metric_type: str = Query(..., description="Тип метрики (CPU, RAM, CHANNEL)"),
     date: str = Query(..., description="Дата у форматі YYYY-MM-DD"),
-    time: str = Query(..., description="Час у форматі HH:MM:SS"),
-    normalization_type: Optional[str] = Query(None, description="Тип нормалізації")
+    time: str = Query(..., description="Час у форматі HH:MM:SS")
 ):
     """
     Отримання графіку розділення мікросервісу на базовий та піковий компоненти у форматі PNG
@@ -592,7 +580,7 @@ async def get_base_peak_component_chart(
         
         # Отримання даних для алгоритму
         microservices, service_names = db_input.get_data_for_algorithm(
-            metric_type, date, time, normalization_type
+            metric_type, date, time
         )
         
         db_input.close()

@@ -2,8 +2,8 @@ import React from 'react';
 import './Sidebar.css';
 
 interface SidebarProps {
-  onPageChange: (page: 'home' | 'grouping' | 'saved-groupings' | 'help' | 'normalization') => void;
-  currentPage: 'home' | 'grouping' | 'saved-groupings' | 'help' | 'normalization';
+  onPageChange: (page: 'home' | 'grouping' | 'saved-groupings' | 'help' | 'normalization' | 'autonormalization') => void;
+  currentPage: 'home' | 'grouping' | 'saved-groupings' | 'help' | 'normalization' | 'autonormalization';
 }
 
 const Sidebar: React.FC<SidebarProps> = ({ onPageChange, currentPage }) => {
@@ -32,6 +32,18 @@ const Sidebar: React.FC<SidebarProps> = ({ onPageChange, currentPage }) => {
             }}
           >
             Нормалізація
+          </a>
+        </li>
+        <li>
+          <a 
+            href="#" 
+            className={currentPage === 'autonormalization' ? 'active' : ''} 
+            onClick={(e) => {
+              e.preventDefault();
+              onPageChange('autonormalization');
+            }}
+          >
+            Автонормалізація
           </a>
         </li>
         <li>

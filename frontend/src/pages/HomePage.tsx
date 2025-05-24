@@ -2,7 +2,7 @@ import React from 'react';
 import './HomePage.css';
 
 interface HomePageProps {
-  onPageChange: (page: 'grouping' | 'saved-groupings' | 'help' | 'normalization') => void;
+  onPageChange: (page: 'grouping' | 'saved-groupings' | 'help' | 'normalization' | 'autonormalization') => void;
 }
 
 const HomePage: React.FC<HomePageProps> = ({ onPageChange }) => {
@@ -17,6 +17,14 @@ const HomePage: React.FC<HomePageProps> = ({ onPageChange }) => {
           </div>
           <h3>Нормалізація</h3>
           <p>Нормалізація даних мікросервісів для подальшого аналізу</p>
+        </div>
+        
+        <div className="feature-card" onClick={() => onPageChange('autonormalization')}>
+          <div className="feature-icon">
+            <i className="fas fa-magic"></i>
+          </div>
+          <h3>Автонормалізація</h3>
+          <p>Автоматична нормалізація метрик на основі стандартної конфігурації</p>
         </div>
         
         <div className="feature-card" onClick={() => onPageChange('grouping')}>

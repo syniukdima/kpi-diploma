@@ -14,7 +14,6 @@ class GroupingRequest(BaseModel):
     time: str
     max_group_size: int = 4
     stability_threshold: float = 20.0
-    normalization_type: Optional[str] = None
 
 class ServiceItem(BaseModel):
     service_name: str
@@ -42,7 +41,7 @@ async def run_grouping(request: GroupingRequest):
         
         # Отримання даних для алгоритму
         microservices, service_names = db_input.get_data_for_algorithm(
-            request.metric_type, request.date, request.time, request.normalization_type
+            request.metric_type, request.date, request.time
         )
         
         if not microservices:
@@ -69,41 +68,16 @@ async def run_grouping(request: GroupingRequest):
         from shared.group_finder import calculate_stability
         
         result_groups = []
-        for i, (group, service_indices) in enumerate(zip(groups, group_services)):
-            services = []
-            
-            for j, (service, idx) in enumerate(zip(group, service_indices)):
-                if idx >= 1000:  # Базовий компонент
-                    real_idx = idx - 1000
-                    service_name = service_names[real_idx]
-                    component_type = "base"
-                elif idx < 0:  # Піковий компонент
-                    real_idx = -idx
-                    service_name = service_names[real_idx]
-                    component_type = "peak"
-                else:  # Звичайний мікросервіс
-                    service_name = service_names[idx]
-                    component_type = "original"
-                
-                services.append(ServiceItem(
-                    service_name=service_name,
-                    values=service,
-                    component_type=component_type
-                ))
-            
-            # Обчислення стабільності групи
+        for i, (group, services) in enumerate(zip(groups, group_services)):
             stability = calculate_stability(group)
-            
-            result_groups.append(GroupItem(
-                group_id=i+1,
-                services=services,
-                total_load=slot_sums[i],
-                stability=stability
-            ))
-        
-        # Закриття з'єднань з базою даних
-        db_input.close()
-        db_output.close()
+            result_groups.append(
+                GroupItem(
+                    group_id=i + 1,
+                    services=services,
+                    total_load=slot_sums[i],
+                    stability=stability
+                )
+            )
         
         return GroupingResponse(
             groups=result_groups,
@@ -113,7 +87,6 @@ async def run_grouping(request: GroupingRequest):
                 "time": request.time,
                 "max_group_size": request.max_group_size,
                 "stability_threshold": request.stability_threshold,
-                "normalization_type": request.normalization_type or "standard",
                 "groups_count": len(groups),
                 "services_count": len(microservices),
                 "saved_records": records_count
@@ -283,8 +256,7 @@ async def form_groups(
     date: str = Query(..., description="Дата у форматі YYYY-MM-DD"),
     time: str = Query(..., description="Час у форматі HH:MM:SS"),
     max_group_size: int = Query(4, description="Максимальний розмір групи"),
-    stability_threshold: float = Query(20.0, description="Поріг стабільності (%)"),
-    normalization_type: Optional[str] = Query(None, description="Тип нормалізації")
+    stability_threshold: float = Query(20.0, description="Поріг стабільності (%)")
 ):
     """
     Формування груп мікросервісів (GET версія)
@@ -295,7 +267,7 @@ async def form_groups(
         
         # Отримання даних для алгоритму
         microservices, service_names = db_input.get_data_for_algorithm(
-            metric_type, date, time, normalization_type
+            metric_type, date, time
         )
         
         if not microservices:
@@ -320,33 +292,25 @@ async def form_groups(
         
         # Формування спрощеної відповіді для фронтенду
         result_groups = []
-        for i, (group, service_indices) in enumerate(zip(groups, group_services)):
-            group_services_list = []
-            
-            for idx in service_indices:
-                if idx >= 1000:  # Базовий компонент
-                    real_idx = idx - 1000
-                    service_name = f"{service_names[real_idx]} (базовий)"
-                elif idx < 0:  # Піковий компонент
-                    real_idx = -idx
-                    service_name = f"{service_names[real_idx]} (піковий)"
-                else:  # Звичайний мікросервіс
-                    service_name = service_names[idx]
-                
-                group_services_list.append(service_name)
-            
+        for i, (group, services) in enumerate(zip(groups, group_services)):
             result_groups.append({
-                "id": i+1,
-                "services": group_services_list
+                "group_number": i + 1,
+                "services": services,
+                "values": group
             })
         
-        # Закриття з'єднань з базою даних
-        db_input.close()
-        db_output.close()
-        
-        return {"groups": result_groups}
+        return {
+            "groups": result_groups,
+            "metrics_info": {
+                "metric_type": metric_type,
+                "date": date,
+                "time": time,
+                "max_group_size": max_group_size,
+                "stability_threshold": stability_threshold
+            }
+        }
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Помилка при групуванні мікросервісів: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Помилка при формуванні груп: {str(e)}")
 
 @router.get("/find-split-services")
 async def find_split_services(
@@ -354,8 +318,7 @@ async def find_split_services(
     date: str = Query(..., description="Дата у форматі YYYY-MM-DD"),
     time: str = Query(..., description="Час у форматі HH:MM:SS"),
     max_group_size: int = Query(4, description="Максимальний розмір групи"),
-    stability_threshold: float = Query(20.0, description="Поріг стабільності (%)"),
-    normalization_type: Optional[str] = Query(None, description="Тип нормалізації")
+    stability_threshold: float = Query(20.0, description="Поріг стабільності (%)")
 ):
     """
     Знаходження мікросервісів, які були розділені на базові та пікові компоненти
@@ -365,7 +328,7 @@ async def find_split_services(
         
         # Отримання даних для алгоритму
         microservices, service_names = db_input.get_data_for_algorithm(
-            metric_type, date, time, normalization_type
+            metric_type, date, time
         )
         
         db_input.close()

@@ -51,50 +51,7 @@ class DBOutput:
             print(f"Помилка при збереженні даних в raw_metrics: {e}")
             return False
 
-    def normalize_data(self, values, method="standard"):
-        """
-        Нормалізація даних
-        
-        Args:
-            values (list): Список значень для нормалізації
-            method (str): Метод нормалізації ('standard', 'minmax', 'robust')
-            
-        Returns:
-            list: Нормалізовані значення
-        """
-        values = np.array(values)
-        
-        if method == "standard":
-            # Стандартна нормалізація (z-score)
-            mean = np.mean(values)
-            std = np.std(values)
-            if std == 0:
-                return values.tolist()
-            return ((values - mean) / std).tolist()
-        
-        elif method == "minmax":
-            # Min-Max нормалізація
-            min_val = np.min(values)
-            max_val = np.max(values)
-            if max_val == min_val:
-                return np.zeros_like(values).tolist()
-            return ((values - min_val) / (max_val - min_val)).tolist()
-        
-        elif method == "robust":
-            # Робастна нормалізація (використовує медіану та IQR)
-            median = np.median(values)
-            q1 = np.percentile(values, 25)
-            q3 = np.percentile(values, 75)
-            iqr = q3 - q1
-            if iqr == 0:
-                return values.tolist()
-            return ((values - median) / iqr).tolist()
-        
-        else:
-            # За замовчуванням - без нормалізації
-            return values.tolist()
-
-    def save_processed_data(self, service_name, metric_type, date, time, processed_values, normalization_type="standard"):
+    def save_processed_data(self, service_name, metric_type, date, time, processed_values):
         """
         Зберігає оброблені дані в таблицю processed_metrics
         
@@ -104,7 +61,6 @@ class DBOutput:
             date (str): Дата у форматі 'YYYY-MM-DD'
             time (str): Час у форматі 'HH:MM:SS'
             processed_values (list): Список вже оброблених значень метрики
-            normalization_type (str): Тип нормалізації
             
         Returns:
             bool: True, якщо дані успішно збережено, False - інакше
@@ -118,7 +74,7 @@ class DBOutput:
             values_json = json.dumps(processed_values)
             self.cursor.execute(query, (
                 service_name, metric_type, date, time, 
-                values_json, normalization_type
+                values_json, "percentage"
             ))
             self.connection.commit()
             print(f"Дані успішно збережено в processed_metrics")
@@ -127,34 +83,6 @@ class DBOutput:
             self.connection.rollback()
             print(f"Помилка при збереженні даних в processed_metrics: {e}")
             return False
-
-    def process_and_save_data(self, service_name, metric_type, date, time, raw_values, normalization_type="standard"):
-        """
-        Обробляє та зберігає дані в обидві таблиці: raw_metrics та processed_metrics
-        
-        Args:
-            service_name (str): Назва мікросервісу
-            metric_type (str): Тип метрики ('CPU', 'RAM', 'CHANNEL')
-            date (str): Дата у форматі 'YYYY-MM-DD'
-            time (str): Час у форматі 'HH:MM:SS'
-            raw_values (list): Список сирих значень метрики
-            normalization_type (str): Тип нормалізації
-            
-        Returns:
-            tuple: (raw_success, processed_success) - результати збереження в обидві таблиці
-        """
-        # Зберігаємо сирі дані
-        raw_success = self.save_raw_data(service_name, metric_type, date, time, raw_values)
-        
-        # Нормалізуємо дані
-        processed_values = self.normalize_data(raw_values, method=normalization_type)
-        
-        # Зберігаємо оброблені дані
-        processed_success = self.save_processed_data(
-            service_name, metric_type, date, time, processed_values, normalization_type
-        )
-        
-        return raw_success, processed_success
 
     def save_grouping_results(self, groups, group_services, service_names, metric_type, date, time):
         """
@@ -241,29 +169,6 @@ class DBOutput:
         
         return success_count
 
-    def batch_save_processed_data(self, data_list):
-        """
-        Пакетне збереження оброблених даних в таблицю processed_metrics
-        
-        Args:
-            data_list: Список кортежів (service_name, metric_type, date, time, processed_values, normalization_type)
-            
-        Returns:
-            int: Кількість успішно збережених записів
-        """
-        success_count = 0
-        for data in data_list:
-            if len(data) == 5:
-                service_name, metric_type, date, time, processed_values = data
-                normalization_type = "standard"
-            else:
-                service_name, metric_type, date, time, processed_values, normalization_type = data
-                
-            if self.save_processed_data(service_name, metric_type, date, time, processed_values, normalization_type):
-                success_count += 1
-        
-        return success_count
-
     def normalize_to_percentage(self, values, metric_type, max_ram_kb=2097152, max_channel_kb=None):
         """
         Нормалізує дані в межах 0-100 (відсотки)
@@ -337,7 +242,7 @@ class DBOutput:
             
             # Зберігаємо оброблені дані
             return self.save_processed_data(
-                service_name, metric_type, date, time, percentage_values, "percentage"
+                service_name, metric_type, date, time, percentage_values
             )
             
         except Exception as e:
@@ -363,11 +268,11 @@ if __name__ == "__main__":
     db_output.save_raw_data("test_service", "CPU", "2023-01-01", "12:00:00", [10, 20, 30, 40, 50])
     
     # Приклад збереження оброблених даних
-    processed_values = db_output.normalize_data([10, 20, 30, 40, 50])
+    processed_values = db_output.normalize_to_percentage([10, 20, 30, 40, 50])
     db_output.save_processed_data("test_service", "CPU", "2023-01-01", "12:00:00", processed_values)
     
     # Приклад обробки та збереження даних в обидві таблиці
-    db_output.process_and_save_data("test_service", "RAM", "2023-01-01", "12:00:00", [15, 25, 35, 45, 55])
+    db_output.process_and_save_percentage_data("test_service", "RAM", "2023-01-01", "12:00:00", [15, 25, 35, 45, 55])
     
     # Закриття з'єднання
     db_output.close() 

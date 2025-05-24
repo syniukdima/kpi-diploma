@@ -9,11 +9,12 @@ import HelpPage from './pages/HelpPage.tsx';
 import SavedGroupingsPage from './pages/SavedGroupingsPage.tsx';
 import NormalizationPage from './pages/NormalizationPage.tsx';
 import HomePage from './pages/HomePage.tsx';
+import AutoNormalization from './components/AutoNormalization.tsx';
 
 const App: React.FC = () => {
-  const [currentPage, setCurrentPage] = useState<'home' | 'grouping' | 'saved-groupings' | 'help' | 'normalization'>('home');
+  const [currentPage, setCurrentPage] = useState<'home' | 'grouping' | 'saved-groupings' | 'help' | 'normalization' | 'autonormalization'>('home');
   
-  const handlePageChange = (page: 'home' | 'grouping' | 'saved-groupings' | 'help' | 'normalization') => {
+  const handlePageChange = (page: 'home' | 'grouping' | 'saved-groupings' | 'help' | 'normalization' | 'autonormalization') => {
     setCurrentPage(page);
   };
 
@@ -33,6 +34,8 @@ const App: React.FC = () => {
         return <HelpPage />;
       case 'normalization':
         return <NormalizationPage />;
+      case 'autonormalization':
+        return <AutoNormalization />;
       default:
         return <HomePage onPageChange={handlePageChange} />;
     }

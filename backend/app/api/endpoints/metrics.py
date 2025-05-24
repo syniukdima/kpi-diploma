@@ -96,8 +96,7 @@ async def get_available_times(
 async def get_metrics_data(
     metric_type: str = Query(..., description="Тип метрики (CPU, RAM, CHANNEL)"),
     date: str = Query(..., description="Дата у форматі YYYY-MM-DD"),
-    time: str = Query(..., description="Час у форматі HH:MM:SS"),
-    normalization_type: Optional[str] = Query(None, description="Тип нормалізації (standard, minmax, robust, percentage)")
+    time: str = Query(..., description="Час у форматі HH:MM:SS")
 ):
     """
     Отримання даних метрик для вибраних параметрів
@@ -107,7 +106,7 @@ async def get_metrics_data(
         
         # Отримання даних для алгоритму
         microservices, service_names = db_input.get_data_for_algorithm(
-            metric_type, date, time, normalization_type
+            metric_type, date, time
         )
         
         # Формування відповіді
@@ -118,7 +117,7 @@ async def get_metrics_data(
         db_input.close()
         return MetricsResponse(microservices=result)
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Помилка при отриманні даних метрик: {str(e)}") 
+        raise HTTPException(status_code=500, detail=f"Помилка при отриманні даних метрик: {str(e)}")
 
 @router.get("/available-options", response_model=AvailableOptions)
 async def get_available_options():
