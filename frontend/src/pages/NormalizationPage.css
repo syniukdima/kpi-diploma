@@ -85,22 +85,3 @@
     border: 1px solid #ebccd1;
     color: #a94442;
 }
-
-.info-box {
-    background-color: #e8f4ff;
-    padding: 15px;
-    border-radius: 8px;
-    border-left: 4px solid #2196F3;
-}
-
-.info-box h3 {
-    margin-top: 0;
-    color: #2196F3;
-    font-size: 18px;
-}
-
-.info-box p {
-    margin: 10px 0;
-    line-height: 1.5;
-    color: #555;
-} 

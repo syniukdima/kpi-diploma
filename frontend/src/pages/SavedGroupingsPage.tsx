@@ -774,7 +774,7 @@ const SavedGroupingsPage: React.FC = () => {
           </div>
           
           <div className="visualization-container full-width">
-            {renderVisualization()}
+              {renderVisualization()}
           </div>
         </>
       )}

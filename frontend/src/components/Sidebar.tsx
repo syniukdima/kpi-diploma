@@ -2,8 +2,8 @@ import React from 'react';
 import './Sidebar.css';
 
 interface SidebarProps {
-  onPageChange: (page: 'home' | 'grouping' | 'saved-groupings' | 'help' | 'normalization' | 'autonormalization') => void;
-  currentPage: 'home' | 'grouping' | 'saved-groupings' | 'help' | 'normalization' | 'autonormalization';
+  onPageChange: (page: 'home' | 'grouping' | 'saved-groupings' | 'help' | 'normalization' | 'autonormalization' | 'raw-metrics') => void;
+  currentPage: 'home' | 'grouping' | 'saved-groupings' | 'help' | 'normalization' | 'autonormalization' | 'raw-metrics';
 }
 
 const Sidebar: React.FC<SidebarProps> = ({ onPageChange, currentPage }) => {
@@ -34,16 +34,14 @@ const Sidebar: React.FC<SidebarProps> = ({ onPageChange, currentPage }) => {
             Нормалізація
           </a>
         </li>
-        <li>
-          <a 
-            href="#" 
-            className={currentPage === 'autonormalization' ? 'active' : ''} 
-            onClick={(e) => {
-              e.preventDefault();
-              onPageChange('autonormalization');
-            }}
-          >
-            Автонормалізація
+        <li className={currentPage === 'autonormalization' ? 'active' : ''}>
+          <a href="#" onClick={() => onPageChange('autonormalization')}>
+            <span>Автонормалізація</span>
+          </a>
+        </li>
+        <li className={currentPage === 'raw-metrics' ? 'active' : ''}>
+          <a href="#" onClick={() => onPageChange('raw-metrics')}>
+            <span>Сирі метрики</span>
           </a>
         </li>
         <li>

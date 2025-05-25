@@ -10,11 +10,12 @@ import SavedGroupingsPage from './pages/SavedGroupingsPage.tsx';
 import NormalizationPage from './pages/NormalizationPage.tsx';
 import HomePage from './pages/HomePage.tsx';
 import AutoNormalization from './components/AutoNormalization.tsx';
+import RawMetricsView from './pages/RawMetricsView.tsx';
 
 const App: React.FC = () => {
-  const [currentPage, setCurrentPage] = useState<'home' | 'grouping' | 'saved-groupings' | 'help' | 'normalization' | 'autonormalization'>('home');
+  const [currentPage, setCurrentPage] = useState<'home' | 'grouping' | 'saved-groupings' | 'help' | 'normalization' | 'autonormalization' | 'raw-metrics'>('home');
   
-  const handlePageChange = (page: 'home' | 'grouping' | 'saved-groupings' | 'help' | 'normalization' | 'autonormalization') => {
+  const handlePageChange = (page: 'home' | 'grouping' | 'saved-groupings' | 'help' | 'normalization' | 'autonormalization' | 'raw-metrics') => {
     setCurrentPage(page);
   };
 
@@ -36,6 +37,8 @@ const App: React.FC = () => {
         return <NormalizationPage />;
       case 'autonormalization':
         return <AutoNormalization />;
+      case 'raw-metrics':
+        return <RawMetricsView />;
       default:
         return <HomePage onPageChange={handlePageChange} />;
     }

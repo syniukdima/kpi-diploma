@@ -108,6 +108,54 @@ class DBInput:
         
         return raw_data, service_names
 
+    def get_all_raw_metrics(self, metric_type=None, service_name=None, date=None, time=None):
+        """
+        Отримати сирі метрики з бази даних з можливістю фільтрації
+        """
+        try:
+            query = "SELECT service_name, metric_type, date, time, value FROM raw_metrics WHERE 1=1"
+            params = []
+
+            if metric_type:
+                query += " AND metric_type = %s"
+                params.append(metric_type)
+            
+            if service_name:
+                query += " AND service_name = %s"
+                params.append(service_name)
+            
+            if date:
+                query += " AND date = %s"
+                params.append(date)
+            
+            if time:
+                query += " AND time = %s"
+                params.append(time)
+
+            query += " ORDER BY date DESC, time DESC"
+            
+            self.cursor.execute(query, params)
+            rows = self.cursor.fetchall()
+            
+            result = []
+            for row in rows:
+                try:
+                    result.append({
+                        "service_name": row["service_name"],
+                        "metric_type": row["metric_type"],
+                        "date": row["date"].strftime("%Y-%m-%d"),
+                        "time": row["time"].strftime("%H:%M:%S") if hasattr(row["time"], "strftime") else str(row["time"]),
+                        "values": json.loads(row["value"])
+                    })
+                except Exception as e:
+                    continue
+            
+            return result
+            
+        except Exception as e:
+            print(f"Error in get_all_raw_metrics: {str(e)}")
+            return []
+
     def close(self):
         """
         Закриття з'єднання з базою даних

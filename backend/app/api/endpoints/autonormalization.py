@@ -23,10 +23,14 @@ class AnalyzeRequest(BaseModel):
     date: str
     time: str
 
+class ResourceInfo(BaseModel):
+    name: str
+    standard_value: str
+    usage_percentage: float
+
 class AutoNormalizationResult(BaseModel):
+    resources: List[ResourceInfo]
     key_resource: str
-    scaling_factor: float
-    message: str
 
 @router.get("/standard-config", response_model=StandardServerConfig)
 async def get_standard_config():
@@ -92,8 +96,7 @@ async def analyze_and_normalize(request: AnalyzeRequest):
             
             # Нормалізуємо значення для кожного сервісу
             for i, values in enumerate(raw_data):
-                normalized_values = [v / scaling_factor for v in values]
-                # Зберігаємо нормалізовані значення
+                normalized_values = [round(v / STANDARD_CONFIG[metric_type]["value"] * 100, 2) for v in values]
                 db_output.save_processed_data(
                     service_names[i],
                     metric_type,
@@ -106,35 +109,34 @@ async def analyze_and_normalize(request: AnalyzeRequest):
         db_input.close()
         db_output.close()
 
-        # Формуємо повідомлення
+        # Формуємо структуровану відповідь
         resource_names = {
             "CPU": "процесор",
             "RAM": "пам'ять",
             "CHANNEL": "мережа"
         }
-        
-        # Формуємо рядки з відсотками відхилення для кожного ресурсу
-        excesses = []
-        for metric_type in ["CPU", "RAM", "CHANNEL"]:  # фіксований порядок
-            if metric_type in max_percentages:
-                percentage = max_percentages[metric_type]
-                excesses.append(f"{resource_names[metric_type]}: {percentage:.1f}%")
-        
-        # Формуємо інформацію про стандартний сервер
-        server_info = (
-            f"Стандартний сервер: процесор {STANDARD_CONFIG['CPU']['value']} MHz, "
-            f"пам'ять {STANDARD_CONFIG['RAM']['value']} KB, "
-            f"мережа {STANDARD_CONFIG['CHANNEL']['value']} KB"
-        )
-        
-        message = server_info + "\n\n"
-        message += "Максимальний відсоток використання ресурсів: " + "; ".join(excesses)
-        message += f"\nНормалізацію проведено за показником: {resource_names[key_resource]}"
+
+        resources = [
+            ResourceInfo(
+                name="CPU",
+                standard_value=f"{STANDARD_CONFIG['CPU']['value']} MHz",
+                usage_percentage=round(max_percentages['CPU'], 1)
+            ),
+            ResourceInfo(
+                name="RAM",
+                standard_value=f"{STANDARD_CONFIG['RAM']['value']} KB",
+                usage_percentage=round(max_percentages['RAM'], 1)
+            ),
+            ResourceInfo(
+                name="Channel",
+                standard_value=f"{STANDARD_CONFIG['CHANNEL']['value']} KB",
+                usage_percentage=round(max_percentages['CHANNEL'], 1)
+            )
+        ]
 
         return AutoNormalizationResult(
-            key_resource=key_resource,
-            scaling_factor=scaling_factor,
-            message=message
+            resources=resources,
+            key_resource=resource_names[key_resource]
         )
 
     except Exception as e:

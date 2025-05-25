@@ -2,7 +2,7 @@ import React from 'react';
 import './HomePage.css';
 
 interface HomePageProps {
-  onPageChange: (page: 'grouping' | 'saved-groupings' | 'help' | 'normalization' | 'autonormalization') => void;
+  onPageChange: (page: 'grouping' | 'saved-groupings' | 'help' | 'normalization' | 'autonormalization' | 'raw-metrics') => void;
 }
 
 const HomePage: React.FC<HomePageProps> = ({ onPageChange }) => {
@@ -18,7 +18,7 @@ const HomePage: React.FC<HomePageProps> = ({ onPageChange }) => {
           <h3>Нормалізація</h3>
           <p>Нормалізація даних мікросервісів для подальшого аналізу</p>
         </div>
-        
+
         <div className="feature-card" onClick={() => onPageChange('autonormalization')}>
           <div className="feature-icon">
             <i className="fas fa-magic"></i>
@@ -26,7 +26,7 @@ const HomePage: React.FC<HomePageProps> = ({ onPageChange }) => {
           <h3>Автонормалізація</h3>
           <p>Автоматична нормалізація метрик на основі стандартної конфігурації</p>
         </div>
-        
+
         <div className="feature-card" onClick={() => onPageChange('grouping')}>
           <div className="feature-icon">
             <i className="fas fa-object-group"></i>
@@ -34,7 +34,7 @@ const HomePage: React.FC<HomePageProps> = ({ onPageChange }) => {
           <h3>Групування</h3>
           <p>Автоматичне групування мікросервісів на основі навантаження</p>
         </div>
-        
+
         <div className="feature-card" onClick={() => onPageChange('saved-groupings')}>
           <div className="feature-icon">
             <i className="fas fa-save"></i>
@@ -42,7 +42,7 @@ const HomePage: React.FC<HomePageProps> = ({ onPageChange }) => {
           <h3>Збережені групування</h3>
           <p>Перегляд та аналіз збережених результатів групування</p>
         </div>
-        
+
         <div className="feature-card" onClick={() => onPageChange('help')}>
           <div className="feature-icon">
             <i className="fas fa-question-circle"></i>
@@ -50,16 +50,14 @@ const HomePage: React.FC<HomePageProps> = ({ onPageChange }) => {
           <h3>Довідка</h3>
           <p>Інструкції та інформація про використання системи</p>
         </div>
-      </div>
-      
-      <div className="system-info">
-        <h2>Про систему</h2>
-        <p>
-          Система призначена для аналізу навантаження мікросервісів та їх автоматичного 
-          групування для оптимізації використання ресурсів. Використовуючи алгоритми 
-          машинного навчання та розділення часових рядів, система допомагає виявити 
-          оптимальні групи мікросервісів для розгортання.
-        </p>
+
+        <div className="feature-card" onClick={() => onPageChange('raw-metrics')}>
+          <div className="feature-icon">
+            <i className="fas fa-table"></i>
+          </div>
+          <h3>Сирі метрики</h3>
+          <p>Перегляд всіх сирих метрик у вигляді таблиці</p>
+        </div>
       </div>
     </div>
   );

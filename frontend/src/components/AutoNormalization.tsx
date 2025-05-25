@@ -10,16 +10,27 @@ import {
   Alert,
   CircularProgress,
   Grid,
-  Paper
+  Paper,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow
 } from '@mui/material';
 import { SelectChangeEvent } from '@mui/material/Select';
 
 const API_BASE_URL = 'http://localhost:8000';
 
+interface ResourceInfo {
+  name: string;
+  standard_value: string;
+  usage_percentage: number;
+}
+
 interface AutoNormalizationResult {
+  resources: ResourceInfo[];
   key_resource: string;
-  scaling_factor: number;
-  message: string;
 }
 
 const AutoNormalization: React.FC = () => {
@@ -178,8 +189,30 @@ const AutoNormalization: React.FC = () => {
           <Typography variant="h6" gutterBottom>
             Результат аналізу
           </Typography>
-          <Typography>
-            {result.message}
+          
+          <TableContainer sx={{ mb: 3 }}>
+            <Table>
+              <TableHead>
+                <TableRow>
+                  <TableCell>Критерій</TableCell>
+                  <TableCell>Стандартне значення</TableCell>
+                  <TableCell>Максимальний відсоток використання</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {result.resources.map((resource) => (
+                  <TableRow key={resource.name}>
+                    <TableCell>{resource.name}</TableCell>
+                    <TableCell>{resource.standard_value}</TableCell>
+                    <TableCell>{resource.usage_percentage}%</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </TableContainer>
+
+          <Typography variant="body2" color="text.secondary">
+            Нормалізацію проведено за показником: {result.key_resource}
           </Typography>
         </Paper>
       )}

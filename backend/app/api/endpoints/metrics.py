@@ -1,10 +1,5 @@
 from fastapi import APIRouter, Query, HTTPException
 from typing import List, Dict, Any, Optional
-import sys
-import os
-
-# Додавання шляху до shared модулів
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../..")))
 from shared.db_input import DBInput
 from shared.db_output import DBOutput
 from pydantic import BaseModel
@@ -29,6 +24,13 @@ class AvailableOptions(BaseModel):
     dates: List[str]
     times: Dict[str, List[str]]
     metric_types: List[str] = ["CPU", "RAM", "CHANNEL"]
+
+class RawMetricsResponse(BaseModel):
+    service_name: str
+    metric_type: str
+    date: str
+    time: str
+    values: List[float]
 
 @router.get("/types", response_model=List[str])
 async def get_metric_types():
@@ -267,51 +269,38 @@ async def normalize_data_to_percentage(
 @router.get("/raw-data-options", response_model=AvailableOptions)
 async def get_raw_data_options():
     """
-    Отримати доступні дати, часи та типи метрик з таблиці raw_metrics для нормалізації
+    Отримати доступні опції для сирих даних
     """
     try:
         db_input = DBInput()
-        metric_types = ["CPU", "RAM", "CHANNEL"]
-        
-        # Запит на отримання всіх унікальних дат з raw_metrics
-        query_dates = "SELECT DISTINCT date FROM raw_metrics ORDER BY date"
-        db_input.cursor.execute(query_dates)
-        dates = [row["date"].strftime("%Y-%m-%d") for row in db_input.cursor.fetchall()]
-        
-        # Запит на отримання всіх унікальних часів для кожної дати
-        times_by_date = {}
-        for date in dates:
-            times_by_date[date] = []
-            
-            # Отримуємо часи з raw_metrics для всіх типів метрик
-            for metric_type in metric_types:
-                query_times = "SELECT DISTINCT time FROM raw_metrics WHERE date = %s AND metric_type = %s ORDER BY time"
-                db_input.cursor.execute(query_times, (date, metric_type))
-                
-                # Додаємо унікальні часи у список
-                for row in db_input.cursor.fetchall():
-                    # Конвертація time в рядок
-                    if hasattr(row["time"], "strftime"):
-                        time_str = row["time"].strftime("%H:%M:%S")
-                    else:
-                        # Якщо це timedelta або інший тип
-                        total_seconds = int(row["time"].total_seconds())
-                        hours, remainder = divmod(total_seconds, 3600)
-                        minutes, seconds = divmod(remainder, 60)
-                        time_str = f"{hours:02d}:{minutes:02d}:{seconds:02d}"
-                    
-                    if time_str not in times_by_date[date]:
-                        times_by_date[date].append(time_str)
-            
-            # Сортуємо часи
-            times_by_date[date].sort()
-        
-        db_input.close()
-        
-        return AvailableOptions(
-            dates=dates,
-            times=times_by_date,
-            metric_types=metric_types
-        )
+        return await get_available_options()
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Помилка при отриманні доступних опцій: {str(e)}") 
+        raise HTTPException(status_code=500, detail=f"Помилка при отриманні опцій: {str(e)}")
+
+@router.get("/raw-data", response_model=List[RawMetricsResponse])
+async def get_raw_metrics(
+    metric_type: Optional[str] = Query(None, description="Тип метрики (CPU, RAM, CHANNEL)"),
+    service_name: Optional[str] = Query(None, description="Назва сервісу"),
+    date: Optional[str] = Query(None, description="Дата у форматі YYYY-MM-DD"),
+    time: Optional[str] = Query(None, description="Час у форматі HH:MM:SS")
+):
+    """
+    Отримати сирі метрики з бази даних з можливістю фільтрації
+    """
+    try:
+        db = DBInput()
+        data = db.get_all_raw_metrics(
+            metric_type=metric_type,
+            service_name=service_name,
+            date=date,
+            time=time
+        )
+        db.close()
+        
+        return data
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Помилка при отриманні даних: {str(e)}"
+        ) 

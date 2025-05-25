@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Query, HTTPException, Body
+from fastapi import APIRouter, Query, HTTPException
 from typing import List, Dict, Any, Optional
 from shared.db_input import DBInput
 from shared.db_output import DBOutput

@@ -233,25 +233,25 @@ async def get_group_statistics(
         statistics = []
         for group_id, data in groups_data.items():
             service_loads = data["loads"]
-            total_load = np.sum(service_loads, axis=0).tolist() if service_loads else []
-            
-            # Обчислення статистики
-            if total_load:
-                mean_load = np.mean(total_load)
-                max_load = np.max(total_load)
-                std_dev = np.std(total_load)
-                cv = (std_dev / mean_load * 100) if mean_load > 0 else 0
-            else:
-                mean_load = 0
-                max_load = 0
-                cv = 0
-            
+        total_load = np.sum(service_loads, axis=0).tolist() if service_loads else []
+        
+        # Обчислення статистики
+        if total_load:
+            mean_load = np.mean(total_load)
+            max_load = np.max(total_load)
+            std_dev = np.std(total_load)
+            cv = (std_dev / mean_load * 100) if mean_load > 0 else 0
+        else:
+            mean_load = 0
+            max_load = 0
+            cv = 0
+        
             statistics.append({
-                "group_id": group_id,
+            "group_id": group_id,
                 "num_services": len(data["services"]),
                 "services": [s["name"] for s in data["services"]],
-                "mean_load": round(mean_load, 2),
-                "peak_load": round(max_load, 2),
+            "mean_load": round(mean_load, 2),
+            "peak_load": round(max_load, 2),
                 "stability": round(cv, 2)
             })
         
