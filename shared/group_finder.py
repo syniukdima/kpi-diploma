@@ -1,5 +1,5 @@
 import json
-from db_input import DBInput
+from shared.db_input import DBInput
 import numpy as np
 
 def calculate_stability(group):
