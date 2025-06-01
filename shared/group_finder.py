@@ -1,5 +1,5 @@
 import json
-from shared.db_input import DBInput
+from db_input import DBInput
 import numpy as np
 
 def calculate_stability(group):
@@ -156,7 +156,6 @@ def form_multiple_knapsack_groups(microservices, max_group_size=4, stability_thr
                                peak_components, peak_indices, peak_slot_sums)
     
     # Розділяємо незгруповані мікросервіси на базові та пікові компоненти
-    print(f"\nРозділення {len(available_indices)} незгрупованих мікросервісів на базові та пікові компоненти")
     (base_services, base_indices), (peak_services, peak_indices_orig) = process_unassigned_microservices(
         available_indices, microservices
     )
@@ -178,7 +177,6 @@ def form_multiple_knapsack_groups(microservices, max_group_size=4, stability_thr
     
     # Якщо ми не сформували жодної групи, розміщуємо кожен мікросервіс у свою групу
     if not final_groups:
-        print("Жодної групи не сформовано. Створюємо групи з одного елемента.")
         final_groups = [[microservice] for microservice in microservices]
         final_group_indices = [[i] for i in range(n)]
         final_slot_sums = [calculate_load_sum([microservice]) for microservice in microservices]
@@ -208,10 +206,8 @@ def group_original_microservices(microservices, available_indices, max_group_siz
     
     # Ітеруємо за розмірами груп від 2 до max_group_size
     for group_size in range(2, min(max_group_size + 1, n + 1)):
-        print(f"\nПробуємо розмір групи: {group_size}")
         
         if len(available_indices) < group_size:
-            print(f"  Недостатньо сервісів залишилось для розміру групи {group_size}")
             break
         
         # Генеруємо стабільні групи для поточного розміру
@@ -223,10 +219,8 @@ def group_original_microservices(microservices, available_indices, max_group_siz
         )
         
         if not candidate_groups:
-            print(f"  Не знайдено стабільних груп розміром {group_size}")
             continue
         
-        print(f"  Знайдено {len(candidate_groups)} стабільних груп розміром {group_size}")
         
         # Створюємо набір всіх вже використаних індексів для швидкого пошуку
         used_indices_set = set(idx for group in final_group_indices for idx in group)
@@ -245,12 +239,10 @@ def group_original_microservices(microservices, available_indices, max_group_siz
             # Оновлюємо набір використаних індексів
             used_indices_set.update(actual_indices)
             
-            print(f"  Додано групу з CV: {cv:.2f}% - {actual_indices}")
         
         # Оновлюємо доступні індекси, видаляючи використані
         available_indices = [idx for idx in available_indices if idx not in used_indices_set]
         
-        print(f"  Залишилось сервісів: {len(available_indices)}")
         
         # Якщо не залишилось мікросервісів, завершуємо
         if not available_indices:
@@ -270,13 +262,11 @@ def process_peak_components(peak_services, peak_indices_orig, peak_components, p
         peak_indices: Список для збереження індексів пікових компонентів
         peak_slot_sums: Список для збереження сум навантажень пікових компонентів
     """
-    print("\nЗберігаємо пікові компоненти для додавання в кінці:")
     for i, (service, idx) in enumerate(zip(peak_services, peak_indices_orig)):
         peak_components.append([service])
         # Використовуємо від'ємні індекси для позначення пікових компонентів
         peak_indices.append([-idx])
         peak_slot_sums.append(calculate_load_sum([service]))
-        print(f"  Збережено піковий компонент мікросервісу: {idx}")
 
 
 def process_base_components(base_services, base_indices, max_group_size, stability_threshold,
@@ -293,7 +283,6 @@ def process_base_components(base_services, base_indices, max_group_size, stabili
         final_group_indices: Список індексів мікросервісів у кожній групі
         final_slot_sums: Список загальних навантажень за часовими слотами для кожної групи
     """
-    print(f"\nДругий прохід алгоритму для {len(base_services)} базових компонентів")
     
     # Створюємо тимчасові структури для другого проходу
     temp_groups = []
@@ -356,10 +345,8 @@ def group_base_components(base_services, base_indices, base_available, max_group
     """
     # Повторюємо цикл для базових компонентів
     for group_size in range(2, min(max_group_size + 1, len(base_services) + 1)):
-        print(f"\nПробуємо розмір групи для базових компонентів: {group_size}")
         
         if len(base_available) < group_size:
-            print(f"  Недостатньо базових компонентів для розміру групи {group_size}")
             break
         
         # Генеруємо стабільні групи базових компонентів
@@ -371,10 +358,8 @@ def group_base_components(base_services, base_indices, base_available, max_group
         )
         
         if not candidate_groups:
-            print(f"  Не знайдено стабільних груп розміром {group_size}")
             continue
         
-        print(f"  Знайдено {len(candidate_groups)} стабільних груп розміром {group_size}")
         
         # Створюємо набір всіх вже використаних індексів для швидкого пошуку
         used_base_set = set(idx for group in temp_indices for idx in group)
@@ -395,12 +380,10 @@ def group_base_components(base_services, base_indices, base_available, max_group
             
             # Виводимо індекси оригінальних мікросервісів для зрозумілості
             real_indices = [base_indices[idx] for idx in actual_indices]
-            print(f"  Додано групу базових компонентів з CV: {cv:.2f}% - оригінальні індекси: {real_indices}")
                             
         # Оновлюємо доступні базові компоненти
         base_available = [idx for idx in base_available if idx not in used_base_set]
         
-        print(f"  Залишилось базових компонентів: {len(base_available)}")
         
         # Якщо не залишилось базових компонентів, завершуємо
         if not base_available:
@@ -422,7 +405,6 @@ def add_ungrouped_base_components(base_services, base_indices, base_available,
         final_group_indices: Список індексів мікросервісів у кожній групі
         final_slot_sums: Список загальних навантажень за часовими слотами для кожної групи
     """
-    print("\nДодаємо незгруповані базові компоненти як окремі групи:")
     for idx in base_available:
         service = base_services[idx]
         real_idx = base_indices[idx]
@@ -431,7 +413,6 @@ def add_ungrouped_base_components(base_services, base_indices, base_available,
         # Використовуємо префікс 1000 для базових компонентів
         final_group_indices.append([1000 + real_idx])
         final_slot_sums.append(calculate_load_sum([service]))
-        print(f"  Додано базовий компонент мікросервісу: {real_idx}")
 
 
 def finalize_results(final_groups, final_group_indices, final_slot_sums,
@@ -452,12 +433,10 @@ def finalize_results(final_groups, final_group_indices, final_slot_sums,
     """
     # Додаємо пікові компоненти в самому кінці
     if peak_components:
-        print("\nДодаємо пікові компоненти як окремі групи в самому кінці:")
         for i, (group, indices, slots) in enumerate(zip(peak_components, peak_indices, peak_slot_sums)):
             final_groups.append(group)
             final_group_indices.append(indices)
             final_slot_sums.append(slots)
-            print(f"  Додано піковий компонент мікросервісу: {-indices[0]}")
     
     return final_groups, final_group_indices, final_slot_sums
 

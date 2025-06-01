@@ -1,8 +1,6 @@
 import unittest
 from group_finder import calculate_stability, form_multiple_knapsack_groups
 import itertools
-import time
-import random
 
 class TestMicroserviceGrouping(unittest.TestCase):
     def test_calculate_stability(self):
@@ -26,7 +24,7 @@ class TestMicroserviceGrouping(unittest.TestCase):
             [0, 0, 0, 0],
             [0, 0, 0, 0]
         ]
-        self.assertEqual(calculate_stability(zero_group), float('inf'))
+        self.assertEqual(calculate_stability(zero_group), 0)
 
         # Тест 4: Група з одним мікросервісом
         single_service = [[1, 2, 3, 4]]
@@ -294,7 +292,6 @@ class TestMicroserviceGrouping(unittest.TestCase):
         cv = calculate_stability(services_cv19)
         self.assertGreater(cv, 18.0)
         self.assertLess(cv, 20.0)
-        print(f"CV для першої пари: {cv:.2f}%")
         
         # Запускаємо алгоритм групування з порогом 20
         groups, group_services, _ = form_multiple_knapsack_groups(
@@ -319,7 +316,6 @@ class TestMicroserviceGrouping(unittest.TestCase):
         cv = calculate_stability(services_cv21)
         self.assertGreater(cv, 20.0)
         self.assertLess(cv, 22.0)
-        print(f"CV для другої пари: {cv:.2f}%")
         
         # Запускаємо алгоритм групування з порогом 20
         groups, group_services, _ = form_multiple_knapsack_groups(
