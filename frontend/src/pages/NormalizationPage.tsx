@@ -28,7 +28,7 @@ const NormalizationPage: React.FC = () => {
     const fetchAvailableOptions = async () => {
         try {
             setIsLoading(true);
-            const response = await axios.get('http://localhost:8000/api/metrics/raw-data-options');
+            const response = await axios.get('https://syniukdmytro.online/api/metrics/raw-data-options');
             setAvailableOptions(response.data);
             setError(null);
         } catch (error) {
@@ -52,7 +52,7 @@ const NormalizationPage: React.FC = () => {
             setError(null);
 
             const response = await axios.post(
-                `http://localhost:8000/api/metrics/normalize-percentage?metric_type=${selectedMetricType}&date=${selectedDate}&time=${selectedTime}`
+                `https://syniukdmytro.online/api/metrics/normalize-percentage?metric_type=${selectedMetricType}&date=${selectedDate}&time=${selectedTime}`
             );
 
             setResultMessage(response.data.message);

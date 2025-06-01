@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import './GroupingView.css';
 import axios from 'axios';
 
-const API_BASE_URL = 'http://localhost:8000';
+const API_BASE_URL = 'https://syniukdmytro.online';
 
 interface MicroserviceGroup {
   group_number: number;

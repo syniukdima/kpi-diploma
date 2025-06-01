@@ -20,7 +20,7 @@ import {
 } from '@mui/material';
 import { SelectChangeEvent } from '@mui/material/Select';
 
-const API_BASE_URL = 'http://localhost:8000';
+const API_BASE_URL = 'https://syniukdmytro.online';
 
 interface ResourceInfo {
   name: string;

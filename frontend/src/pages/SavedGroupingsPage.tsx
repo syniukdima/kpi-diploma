@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import './SavedGroupingsPage.css';
 import axios from 'axios';
 
-const API_BASE_URL = 'http://localhost:8000';
+const API_BASE_URL = 'https://syniukdmytro.online';
 
 // Константи для параметрів, які використовуються в запитах
 const DEFAULT_MAX_GROUP_SIZE = 3;
