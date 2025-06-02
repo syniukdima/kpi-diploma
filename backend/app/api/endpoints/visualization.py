@@ -477,6 +477,18 @@ async def get_stability_direct_chart(
             stability_threshold=stability_threshold
         )
         
+        # Фільтруємо групи з більш ніж 1 елементом для графіка стабільності
+        filtered_groups = []
+        filtered_group_services = []
+        for i, (group, services) in enumerate(zip(groups, group_services)):
+            if len(services) > 1:  # Показуємо тільки групи з більш ніж 1 елементом
+                filtered_groups.append(group)
+                filtered_group_services.append(services)
+        
+        # Якщо немає груп з більш ніж 1 елементом
+        if not filtered_groups:
+            raise HTTPException(status_code=404, detail="Немає груп з більш ніж одним елементом для відображення стабільності")
+        
         # Створення візуалізатора
         visualizer = Visualizer()
         
@@ -489,7 +501,7 @@ async def get_stability_direct_chart(
         cv_values = []
         group_labels = []
         
-        for i, group in enumerate(groups):
+        for i, group in enumerate(filtered_groups):
             # Обчислення коефіцієнта варіації
             stability = calculate_stability(group)
             cv_values.append(stability if stability != float('inf') else 100)

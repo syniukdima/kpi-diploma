@@ -22,4 +22,30 @@
   padding: 20px;
   overflow-y: auto;
   width: 100%;
+}
+
+/* Адаптивні стилі для мобільних пристроїв */
+@media (max-width: 768px) {
+  .main-container {
+    flex-direction: column;
+  }
+  
+  .content {
+    padding: 15px;
+    width: 100%;
+  }
+  
+  .content.full-width {
+    padding: 15px;
+  }
+}
+
+@media (max-width: 480px) {
+  .content {
+    padding: 10px;
+  }
+  
+  .content.full-width {
+    padding: 10px;
+  }
 } 

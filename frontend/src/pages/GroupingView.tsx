@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import './GroupingView.css';
+import { API_BASE_URL } from '../config/api.ts';
 import axios from 'axios';
-
-const API_BASE_URL = 'https://syniukdmytro.online';
 
 interface MicroserviceGroup {
   group_number: number;

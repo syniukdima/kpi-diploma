@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import './NormalizationPage.css';
+import { API_BASE_URL } from '../config/api.ts';
 
 // Інтерфейси для даних
 interface AvailableOptions {
@@ -28,7 +29,7 @@ const NormalizationPage: React.FC = () => {
     const fetchAvailableOptions = async () => {
         try {
             setIsLoading(true);
-            const response = await axios.get('https://syniukdmytro.online/api/metrics/raw-data-options');
+            const response = await axios.get(`${API_BASE_URL}/api/metrics/raw-data-options`);
             setAvailableOptions(response.data);
             setError(null);
         } catch (error) {
@@ -52,7 +53,7 @@ const NormalizationPage: React.FC = () => {
             setError(null);
 
             const response = await axios.post(
-                `https://syniukdmytro.online/api/metrics/normalize-percentage?metric_type=${selectedMetricType}&date=${selectedDate}&time=${selectedTime}`
+                `${API_BASE_URL}/api/metrics/normalize-percentage?metric_type=${selectedMetricType}&date=${selectedDate}&time=${selectedTime}`
             );
 
             setResultMessage(response.data.message);

@@ -16,6 +16,8 @@ import {
   InputLabel,
   Grid
 } from '@mui/material';
+import '../components/MobileStyles.css';
+import { API_BASE_URL } from '../config/api.ts';
 
 interface RawMetric {
   service_name: string;
@@ -51,7 +53,7 @@ const RawMetricsView: React.FC = () => {
       if (filters.date) params.append('date', filters.date);
       if (filters.time) params.append('time', filters.time);
 
-      const response = await fetch(`/api/metrics/raw-data?${params.toString()}`);
+      const response = await fetch(`${API_BASE_URL}/api/metrics/raw-data?${params.toString()}`);
       if (!response.ok) {
         throw new Error('Помилка при отриманні даних');
       }
@@ -83,12 +85,22 @@ const RawMetricsView: React.FC = () => {
   }
 
   return (
-    <Box p={3}>
-      <Typography variant="h4" gutterBottom>
+    <Box className="raw-metrics-container">
+      <Typography variant="h4" component="h1" gutterBottom>
         Сирі метрики
       </Typography>
 
       <Grid container spacing={2} sx={{ mb: 3 }}>
+        <Grid item xs={12} sm={6} md={3}>
+          <TextField
+            fullWidth
+            label="Пошук за назвою сервісу"
+            value={filters.service_name}
+            onChange={handleFilterChange('service_name')}
+            variant="outlined"
+          />
+        </Grid>
+
         <Grid item xs={12} sm={6} md={3}>
           <FormControl fullWidth>
             <InputLabel>Тип метрики</InputLabel>
@@ -100,22 +112,6 @@ const RawMetricsView: React.FC = () => {
               <MenuItem value="">Всі</MenuItem>
               {metricTypes.map(type => (
                 <MenuItem key={type} value={type}>{type}</MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-        </Grid>
-
-        <Grid item xs={12} sm={6} md={3}>
-          <FormControl fullWidth>
-            <InputLabel>Сервіс</InputLabel>
-            <Select
-              value={filters.service_name}
-              onChange={handleFilterChange('service_name')}
-              label="Сервіс"
-            >
-              <MenuItem value="">Всі</MenuItem>
-              {uniqueServices.map(service => (
-                <MenuItem key={service} value={service}>{service}</MenuItem>
               ))}
             </Select>
           </FormControl>

@@ -85,3 +85,78 @@
     border: 1px solid #ebccd1;
     color: #a94442;
 }
+
+/* Адаптивні стилі для мобільних пристроїв */
+@media (max-width: 768px) {
+  .normalization-page {
+    padding: 15px;
+    max-width: 100%;
+  }
+  
+  .normalization-page h1 {
+    font-size: 22px;
+    margin-bottom: 15px;
+  }
+  
+  .normalization-form {
+    padding: 15px;
+    margin-bottom: 15px;
+  }
+  
+  .form-group {
+    margin-bottom: 12px;
+  }
+  
+  .form-group select {
+    padding: 12px;
+    font-size: 16px; /* Запобігає зуму на iOS */
+  }
+  
+  .normalize-button {
+    padding: 14px 20px;
+    font-size: 16px;
+  }
+  
+  .result-message {
+    padding: 12px;
+    font-size: 14px;
+  }
+}
+
+@media (max-width: 480px) {
+  .normalization-page {
+    padding: 10px;
+  }
+  
+  .normalization-page h1 {
+    font-size: 20px;
+    margin-bottom: 12px;
+  }
+  
+  .normalization-form {
+    padding: 12px;
+  }
+  
+  .form-group {
+    margin-bottom: 10px;
+  }
+  
+  .form-group label {
+    font-size: 14px;
+  }
+  
+  .form-group select {
+    padding: 10px;
+    font-size: 16px;
+  }
+  
+  .normalize-button {
+    padding: 12px 18px;
+    font-size: 15px;
+  }
+  
+  .result-message {
+    padding: 10px;
+    font-size: 13px;
+  }
+}

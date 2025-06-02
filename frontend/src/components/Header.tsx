@@ -3,9 +3,11 @@ import './Header.css';
 
 interface HeaderProps {
   onHomeClick: () => void;
+  onMenuToggle?: () => void;
+  showMenuButton?: boolean;
 }
 
-const Header: React.FC<HeaderProps> = ({ onHomeClick }) => {
+const Header: React.FC<HeaderProps> = ({ onHomeClick, onMenuToggle, showMenuButton = false }) => {
   return (
     <header className="header">
       <div className="logo">
@@ -15,6 +17,20 @@ const Header: React.FC<HeaderProps> = ({ onHomeClick }) => {
         }}>
           <h1>Групування мікросервісів</h1>
         </a>
+      </div>
+      <div className="header-right">
+        <div className="user-info">
+          Система аналізу навантаження
+        </div>
+        {showMenuButton && (
+          <button 
+            className="mobile-menu-toggle-header"
+            onClick={onMenuToggle}
+            aria-label="Відкрити меню"
+          >
+            ☰
+          </button>
+        )}
       </div>
     </header>
   );

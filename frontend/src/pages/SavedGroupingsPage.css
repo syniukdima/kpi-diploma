@@ -363,4 +363,132 @@
 .visualization-container.full-width {
   width: 100%;
   padding: 20px;
+}
+
+/* Адаптивні стилі для мобільних пристроїв */
+@media (max-width: 768px) {
+  .saved-groupings-page {
+    padding: 10px;
+  }
+  
+  .groupings-table-fullwidth,
+  .visualizations-fullwidth {
+    padding: 15px;
+    margin-bottom: 15px;
+  }
+  
+  .table-container {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  .groupings-table {
+    min-width: 500px;
+  }
+  
+  .groupings-table th,
+  .groupings-table td {
+    padding: 8px 10px;
+    font-size: 14px;
+  }
+  
+  .load-button {
+    width: 100%;
+    max-width: none;
+    padding: 12px 20px;
+    font-size: 16px;
+  }
+  
+  .visualization-tabs {
+    flex-wrap: wrap;
+    gap: 5px;
+  }
+  
+  .tab-button {
+    padding: 8px 12px;
+    font-size: 14px;
+    min-width: auto;
+  }
+  
+  .group-selector-tabs {
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 15px 0;
+  }
+  
+  .group-tab {
+    padding: 6px 12px;
+    font-size: 14px;
+  }
+  
+  .statistics-content {
+    flex-direction: column;
+    gap: 15px;
+  }
+  
+  .group-statistics {
+    width: 100%;
+    padding: 12px;
+  }
+  
+  .group-statistics h3 {
+    font-size: 16px;
+  }
+  
+  .chart-image img {
+    max-width: 100%;
+    height: auto;
+  }
+}
+
+@media (max-width: 480px) {
+  .saved-groupings-page {
+    padding: 5px;
+  }
+  
+  .saved-groupings-page h2 {
+    font-size: 20px;
+    margin-bottom: 15px;
+  }
+  
+  .saved-groupings-page h3 {
+    font-size: 16px;
+    margin-bottom: 10px;
+  }
+  
+  .groupings-table-fullwidth,
+  .visualizations-fullwidth {
+    padding: 10px;
+  }
+  
+  .groupings-table {
+    min-width: 450px;
+  }
+  
+  .groupings-table th,
+  .groupings-table td {
+    padding: 6px 8px;
+    font-size: 13px;
+  }
+  
+  .tab-button {
+    padding: 6px 10px;
+    font-size: 13px;
+  }
+  
+  .group-tab {
+    padding: 5px 10px;
+    font-size: 13px;
+  }
+  
+  .placeholder {
+    height: 200px;
+    padding: 15px;
+    font-size: 14px;
+  }
+  
+  .fetch-button {
+    padding: 10px 15px;
+    font-size: 14px;
+  }
 } 

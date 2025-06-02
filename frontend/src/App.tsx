@@ -12,15 +12,22 @@ import HomePage from './pages/HomePage.tsx';
 import AutoNormalization from './components/AutoNormalization.tsx';
 import RawMetricsView from './pages/RawMetricsView.tsx';
 
+type PageType = 'home' | 'grouping' | 'saved-groupings' | 'help' | 'normalization' | 'autonormalization' | 'raw-metrics';
+
 const App: React.FC = () => {
-  const [currentPage, setCurrentPage] = useState<'home' | 'grouping' | 'saved-groupings' | 'help' | 'normalization' | 'autonormalization' | 'raw-metrics'>('home');
+  const [currentPage, setCurrentPage] = useState<PageType>('home');
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   
-  const handlePageChange = (page: 'home' | 'grouping' | 'saved-groupings' | 'help' | 'normalization' | 'autonormalization' | 'raw-metrics') => {
+  const handlePageChange = (page: PageType) => {
     setCurrentPage(page);
   };
 
   const goToHome = () => {
     setCurrentPage('home');
+  };
+
+  const toggleMobileMenu = () => {
+    setIsMobileMenuOpen(!isMobileMenuOpen);
   };
 
   const renderPage = () => {
@@ -46,10 +53,19 @@ const App: React.FC = () => {
 
   return (
     <div className="app">
-      <Header onHomeClick={goToHome} />
+      <Header 
+        onHomeClick={goToHome} 
+        onMenuToggle={toggleMobileMenu}
+        showMenuButton={currentPage !== 'home'}
+      />
       <div className="main-container">
         {currentPage !== 'home' && (
-          <Sidebar onPageChange={handlePageChange} currentPage={currentPage} />
+          <Sidebar 
+            onPageChange={handlePageChange} 
+            currentPage={currentPage}
+            isMobileMenuOpen={isMobileMenuOpen}
+            setIsMobileMenuOpen={setIsMobileMenuOpen}
+          />
         )}
         <main className={currentPage === 'home' ? "content full-width" : "content"}>
           {renderPage()}

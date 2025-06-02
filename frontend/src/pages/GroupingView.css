@@ -472,4 +472,187 @@ img {
   border-color: #3498db;
   outline: none;
   box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
+}
+
+/* Адаптивні стилі для мобільних пристроїв */
+@media (max-width: 768px) {
+  .grouping-view {
+    padding: 0 10px;
+  }
+  
+  .control-panel {
+    margin: 15px 0;
+    padding: 12px;
+  }
+  
+  .form-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+  
+  .form-group select,
+  .form-group input {
+    padding: 12px;
+    font-size: 16px; /* Запобігає зуму на iOS */
+  }
+  
+  .fetch-button {
+    padding: 12px 20px;
+    font-size: 16px;
+  }
+  
+  .groups-container {
+    flex-direction: column;
+    gap: 15px;
+  }
+  
+  .groups-list {
+    width: 100%;
+    order: 2; /* Переміщуємо список груп вниз */
+  }
+  
+  .visualization-container {
+    order: 1; /* Візуалізація зверху */
+    margin-bottom: 20px;
+  }
+  
+  .group-item {
+    padding: 12px;
+  }
+  
+  .group-item h4 {
+    font-size: 16px;
+  }
+  
+  .service-count {
+    font-size: 14px;
+  }
+  
+  .visualization-tabs {
+    flex-wrap: wrap;
+    gap: 5px;
+  }
+  
+  .tab-button {
+    padding: 8px 12px;
+    font-size: 14px;
+    min-width: auto;
+  }
+  
+  .statistics-content {
+    grid-template-columns: 1fr;
+    gap: 15px;
+  }
+  
+  .group-statistics {
+    width: 100%;
+  }
+  
+  .microservices-data-table {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  .microservices-data-table table {
+    min-width: 500px;
+  }
+  
+  .microservices-data-table th,
+  .microservices-data-table td {
+    padding: 8px 10px;
+    font-size: 14px;
+  }
+  
+  .service-selector {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+  
+  .service-selector select {
+    min-width: auto;
+  }
+  
+  .chart-image img {
+    max-width: 100%;
+    height: auto;
+  }
+}
+
+@media (max-width: 480px) {
+  .grouping-view {
+    padding: 0 5px;
+  }
+  
+  .control-panel {
+    margin: 10px 0;
+    padding: 10px;
+  }
+  
+  .form-grid {
+    gap: 10px;
+  }
+  
+  .form-group label {
+    font-size: 14px;
+  }
+  
+  .form-group select,
+  .form-group input {
+    padding: 10px;
+    font-size: 16px;
+  }
+  
+  .fetch-button {
+    padding: 10px 15px;
+    font-size: 14px;
+  }
+  
+  .group-item {
+    padding: 10px;
+  }
+  
+  .group-item h4 {
+    font-size: 15px;
+    margin-bottom: 8px;
+  }
+  
+  .service-count {
+    font-size: 13px;
+  }
+  
+  .tab-button {
+    padding: 6px 10px;
+    font-size: 13px;
+  }
+  
+  .group-statistics {
+    padding: 12px;
+  }
+  
+  .group-statistics h3 {
+    font-size: 16px;
+  }
+  
+  .microservices-data-table table {
+    min-width: 450px;
+  }
+  
+  .microservices-data-table th,
+  .microservices-data-table td {
+    padding: 6px 8px;
+    font-size: 13px;
+  }
+  
+  .placeholder {
+    height: 200px;
+    padding: 15px;
+    font-size: 14px;
+  }
+  
+  .numeric-input input {
+    width: 100px;
+    padding: 8px;
+    font-size: 14px;
+  }
 } 

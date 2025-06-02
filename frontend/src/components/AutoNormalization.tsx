@@ -19,8 +19,8 @@ import {
   TableRow
 } from '@mui/material';
 import { SelectChangeEvent } from '@mui/material/Select';
-
-const API_BASE_URL = 'https://syniukdmytro.online';
+import './MobileStyles.css';
+import { API_BASE_URL } from '../config/api.ts';
 
 interface ResourceInfo {
   name: string;
@@ -119,21 +119,23 @@ const AutoNormalization: React.FC = () => {
   };
 
   return (
-    <Box sx={{ p: 3 }}>
-      <Typography variant="h4" gutterBottom>
+    <Box className="auto-normalization-container">
+      <Typography variant="h4" component="h1" gutterBottom>
         Автоматична нормалізація
       </Typography>
 
       <Paper sx={{ p: 3, mb: 3 }}>
-        <Grid container spacing={2}>
+        <Grid container spacing={3}>
           <Grid item xs={12} sm={6}>
             <FormControl fullWidth>
               <InputLabel>Дата</InputLabel>
               <Select
                 value={selectedDate}
-                label="Дата"
                 onChange={handleDateChange}
+                label="Дата"
+                disabled={isLoading}
               >
+                <MenuItem value="">Оберіть дату</MenuItem>
                 {availableDates.map((date) => (
                   <MenuItem key={date} value={date}>
                     {date}
@@ -142,16 +144,17 @@ const AutoNormalization: React.FC = () => {
               </Select>
             </FormControl>
           </Grid>
-          
+
           <Grid item xs={12} sm={6}>
             <FormControl fullWidth>
               <InputLabel>Час</InputLabel>
               <Select
                 value={selectedTime}
-                label="Час"
                 onChange={handleTimeChange}
-                disabled={!selectedDate}
+                label="Час"
+                disabled={isLoading || !selectedDate}
               >
+                <MenuItem value="">Оберіть час</MenuItem>
                 {availableTimes.map((time) => (
                   <MenuItem key={time} value={time}>
                     {time}
@@ -160,22 +163,19 @@ const AutoNormalization: React.FC = () => {
               </Select>
             </FormControl>
           </Grid>
-        </Grid>
 
-        <Box sx={{ mt: 3 }}>
-          <Button
-            variant="contained"
-            onClick={handleNormalize}
-            disabled={!selectedDate || !selectedTime || isLoading}
-            fullWidth
-          >
-            {isLoading ? (
-              <CircularProgress size={24} color="inherit" />
-            ) : (
-              'Виконати автонормалізацію'
-            )}
-          </Button>
-        </Box>
+          <Grid item xs={12}>
+            <Button
+              variant="contained"
+              onClick={handleNormalize}
+              disabled={isLoading || !selectedDate || !selectedTime}
+              fullWidth
+              sx={{ mt: 2 }}
+            >
+              {isLoading ? <CircularProgress size={24} /> : 'Провести аналіз'}
+            </Button>
+          </Grid>
+        </Grid>
       </Paper>
 
       {error && (

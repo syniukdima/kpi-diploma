@@ -20,8 +20,8 @@ environment = os.getenv("ENVIRONMENT", "development")
 if environment == "production":
     # Продакшн налаштування - дозволяємо тільки твій домен
     allowed_origins = [
-        "https://yourdomain.com",  # Замінити на твій домен
-        "https://www.yourdomain.com",  # Замінити на твій домен
+        "https://syniukdmytro.online",  # Замінити на твій домен
+        "https://www.syniukdmytro.online",  # Замінити на твій домен
     ]
 else:
     # Розробка - дозволяємо localhost
